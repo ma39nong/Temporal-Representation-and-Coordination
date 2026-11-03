@@ -1,0 +1,11 @@
+{
+  "horizon": 50,
+  "tolerance_s": 0.0001,
+  "datasets": [
+    {"id": "source_a", "repo_id": "replace/source_a", "root": "../datasets/source_a", "layout": "converter58"},
+    {"id": "source_b", "repo_id": "replace/source_b", "root": "../datasets/source_b", "layout": "converter58"}
+  ],
+  "source_mapping_path": null,
+  "validity_column": null,
+  "normalization": null
+}

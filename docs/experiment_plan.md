@@ -3,7 +3,7 @@
 ## 前置门槛（P0-B）
 
 1. 固定主训练仓库2ab68c8…及LeRobot版本/锁文件；记录数据manifest、各目录指纹、episode到原始recording/片段映射和统计SHA。提供311/480及连续多颗数据的只读挂载配置，不能用本地早期样本充当正式训练集。
-2. 接入主仓库load_bundle与norm_provenance验证适配器，核验实际T3的50×58统计、50×14 arm统计和floor。固定同一输入、同一anchor、同一窗口逐数值比较原始action/训练target/解码物理命令。无统计时可以研究明确已核验的原始物理命令，但不能称训练目标逆变换验证完成。
+2. 使用已整理的assets/manifest身份校验接口（来源为主仓库load_bundle与norm_provenance），核验实际T3的50×58统计、50×14 arm统计和floor。固定同一输入、同一anchor、同一窗口逐数值比较原始action/训练target/解码物理命令。无统计时可以研究明确已核验的原始物理命令，但不能称训练目标逆变换验证完成。
 3. 在固定LeRobot环境验证第一/中间/末尾采样点、短episode、跨episode、不同action_hz的最近邻/padding/掩码行为，比较Batch和offset。现有轻量数值对照不代替此步骤。
 4. 核验有效帧定义、源时间映射、摄像同步与清洗边界；无法恢复来源的片段单独标记/排除主结论。定义stage：approach/contact/grasp/detach/transfer等由标注规则决定，允许缺失，不预设所有任务都有所有阶段。
 5. 以原始recording/采集session分train/validation/test，冻结随机种子和文件清单；全部重叠窗口及其裁剪来源只能落入同一split。连续多颗数据另设分布外测试集。
@@ -35,3 +35,7 @@ P0-B：verified_dataset_manifest.json、normalization_identity.json、与原load
 ## 已有分支工具优先级补充
 
 开始P0-C前，先核对tomato-openpi的paper-flash-test固定提交534ed023542a20dad55e1827b0a5adad9b760d4d中scripts/flash/polynomial.py及其测试，将适合的NumPy代码整理进本仓库后再扩展，不重复从零开发。普通0..49拟合与FLASH扩展-2..51/历史/边界投影必须作为不同协议分别比较；FLASH训练数据窗口还要求上下文，不能复用其窗口计数冒充本项目完整50帧窗口。已有结果需要重新核验数据身份与实验设置后才能用于本项目结论。基础契约同时追溯main，T3行为追溯delta-paper；具体分支比较见code_reuse_audit.md。
+
+## 当前已具备的工程接口
+
+manifest、recording_split、T3 assets身份校验、ActionCodec和iter_windows已在本仓库实现并有合成端到端测试；下一步复用这些接口接入正式数据，不再重复实现相同基础设施。assets-check与roundtrip仅在实际数据绑定及预期contract固定后标记verified。真实来源/统计仍待提供，因此P0-B前置门槛尚未全部满足。

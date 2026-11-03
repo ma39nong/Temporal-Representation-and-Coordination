@@ -1,54 +1,46 @@
-# P0-A 代码复用调查（2026-11-03）
+# 代码复用与来源清单
 
-先调查后实现。指定研究路径原先不存在，已从用户给定 GitHub 地址克隆；原始 HEAD 为 504fdb4b8d7ebac5aa34cbbbe713d578cb2feb49，仅 README。当前聊天目录是独立的未提交资料仓库，未改动、未复制配置导出。
+用户确认主训练工程为tomato-openpi。本仓库整理其适用的P0模块，代码保存在仓库内；无跨仓库运行依赖。源训练仓库/数据/权重只读，未fetch或切换源分支。以下远端引用指本地缓存，不断言远端最新状态。
 
-| 原始仓库/分支 | Git Commit | 原始文件路径 | 实际功能 | 58D | 重依赖 | 许可证/公开权限 | 复用方式 | 研究模块 |
-|---|---|---|---|---|---|---|---|---|
-| pi05/main | 09bab9d792aeed178644575efda40753cf974e51 | examples/fr3_wuji/convert_dataset.py; src/openpi/policies/fr3_wuji_policy.py | Wuji 54D、20D 手部重排；非 Sharpa | 否 | LeRobot/OpenPI | 根 Apache-2.0；项目代码按用户要求正常复用 | Skip | 无 |
-| sharpa-pi05/train-rtc | a3997fbd72a6e758707f61c316d994962090f87e | src/openpi/policies/fr3_sharpa_protocol.py | 明确左臂7、左手22、右臂7、右手22，rad | 是 | NumPy | 根 Apache-2.0；项目代码按用户要求正常复用 | Adapter（独立契约，未复制源码） | action_schema.py |
-| sharpa-pi05/train-rtc | 同上 | src/openpi/training/config.py; data_loader.py | pi05_fr3_sharpa 等配置为50×58，delta mask 7,-22,7,-22；LeRobot按 round(t*fps/action_hz)/fps 取未来时间 | 是 | Torch/JAX/LeRobot | 同上 | Adapter（直接读标准元信息/Parquet，不模拟训练采样器） | lerobot_adapter.py; chunks.py |
-| sharpa-pi05/train-rtc | 同上 | src/openpi/transforms.py; shared/normalize.py | 起点state减/加；quantile epsilon=1e-6，无clip；norm_stats JSON根为norm_stats | 是，但通用维度 | OpenPI导入链重 | Apache-2.0；不复制 | Adapter（独立数值接口，与原方法对比） | semantics.py; normalization.py |
-| sharpa-pi05/train-rtc | 同上 | examples/fr3_sharpa/export_lerobot.py | 实测state/命令action；裁剪各段save_episode；导出报告记录source_start/end_index及crop_interval | 是 | LeRobot/图像 | 项目代码按用户要求正常复用 | Skip（仅读调查） | data_contract.md |
-| tomato-openpi/delta-paper-training-test | 2ab68c8b8090284fca6d258f86bf5098d2f1302b | src/openpi/policies/fr3_sharpa_multimodal_policy.py | 转换器116D state提取位置，58D action由LA,RA,LH,RH重排为LA,LH,RA,RH | 是 | OpenPI/图像 | 根 Apache-2.0；项目代码按用户要求正常复用 | Adapter（未复制源码，数值接口对照） | action_schema.py |
-| tomato-openpi/delta-paper-training-test | 同上 | src/openpi/shared/delta_paper.py | ArmNormalization在全局quantile与双臂zscore间桥接；ARMS=0:7,29:36；std=max(std,std_floor)；bundle SHA校验 | 是 | 数值类仅NumPy；完整pipeline重 | 同上 | Adapter（独立数值实现；原类只读动态对照） | normalization.py; compare_upstream.py |
-| tomato-openpi/delta-paper-training-test | 同上 | src/openpi/training/delta_paper.py | CompleteWindows筛选每episode完整窗口N-H+1；frame_index必须0..N-1 | 是 | Torch/JAX/OpenPI | 同上 | Adapter（离线窗口额外拒绝时间断点；不宣称训练loader完全等价） | chunks.py |
-| convert_data_job-worker/auto-convert-transfer-ui | 8fea5fea8d6f1a2ee03e2f9d9e80c134cadf5bdb | schemas/sharpa_contract.yaml; src/convest/formats/lerobot_v21.py; training/normal.py | 原始action=LA,RA,LH,RH；state116D含速度；source_timestamp_ns；segment及source边界可写入episodes；normal投影保留原矢量 | 是 | PyArrow/视频/转换链 | 项目代码按用户要求正常复用；保留第三方声明 | Skip（只读记录协议，不复制） | data_contract.md |
+## 主训练分支
 
-## 证据范围与工程独立性
-
-三个指定参考仓库及额外匹配服务器提交的 tomato-openpi 初始均无未提交修改。分支/Commit来自本地Git，不等同于确认服务器当前进程。聊天已有2026-11-02导出记载服务器分支 delta-paper-training-test、共享Commit 2ab68c8…，本地 tomato-openpi 恰好匹配。未连接服务器；311/480数据集与T3统计不能宣称已审计。
-
-现有轻量数学与映射可通过接口复用；完整LeRobot训练Batch、图像、增强、sampler及部署都未导入。本次以本仓库内的轻量实现完成接口，未引入训练模型或驱动。用户已明确这是自有工程整理与独立测试，后续所需项目代码正常复用到本仓库，保留来源与第三方许可证，不增加常规复用审批。本仓库对照脚本仅在用户本地显式指定源目录时抽取已审阅数值方法执行，禁写bytecode，不导入整个训练工程，不写源目录。
-
-## 一致性验证边界
-
-compare_upstream.py 对同一带唯一值的合成输入验证真实源方法：协议ORDER、116→58位置提取、58D重排、Delta/Absolute、Quantile/Z-score及T3 bridge、CompleteWindows索引。数学对照用明确标为synthetic的统计，不代替真实统计。实际训练LeRobot解码、nearest timestamp选择、padding及Batch逐样本一致性仍须在固定LeRobot环境中做P0-B；本阶段审计使用完整窗口且拒绝不连续，不冒充所有训练loader的边界策略。
-
-## 主训练仓库确认与Batch细节
-
-用户进一步明确 `tomato-openpi` 才是实际训练仓库，后续一切训练语义以它为主，另外两份仅历史对照。主仓库 `src/openpi/training/data_loader.py` 实际导入LeRobot/Torch/JAX：TransformedDataset应用repack→data transforms→Normalize→model transforms，TorchDataLoader将窗口交给torch.utils.data.DataLoader；epoch_shuffle用sampling.epoch_shuffle_indices构造固定预算计划及PlanSampler，支持按已完成steps seek。普通/加权采样路径仍独立，不能把epoch_shuffle行为外推到所有配置。P0不复制Batch sampler，只读取episode并提供完整窗口索引。
-
-本次真实数据读取来自早期canonical58布局，与主训练converter116路径分开记录。归一化资产只读查看到早期actions统计为[58]；未把它冒充T3的[50,58]统计。对照结果及数据集覆盖数量在README，完整产物在Git忽略的outputs。
-
-工程约定：来源仓库路径不属于运行依赖。src/trc内使用包内导入；只有可选的compare_upstream.py在显式指定--source-root时读取上游源码，日常审计和基础测试不需要旧训练仓库。数据及统计仍通过配置指定，不能混同为跨仓库代码依赖。
-
-## tomato-openpi 多分支补查
-
-此前P0-A主要读当前检出的delta-paper-training-test，未系统比较其他分支。现使用git show/git diff只读补查，不切换源仓库、不fetch；下列远端引用均是本地缓存，不能视为远端最新状态。本地未发现名为delta-paper的精确分支，实际对应delta-paper-training-test及其后续集成分支。
-
-| 引用 | 已核验Commit | 实际检查与复用判断 |
+| 引用 | 已核验Commit | 已检查内容 |
 |---|---|---|
-| 本地main | 4d0cb07e02181ed3bcdd876cad69446b22cfb075 | config.py已有58D Sharpa、converter116适配、Delta/Absolute开关。与delta-paper-training-test比较：fr3_sharpa_multimodal_policy.py、fr3_sharpa_protocol.py、training/config.py无差异；当前布局和基本动作语义继承自main，不是delta-paper独有实现。 |
-| origin/main、github/main（本地缓存） | 897cb917097c1d56a3fa7a517bf561b9e878036e | 比本地main多两次提交，增加训练时RTC相关模型/config/UI与测试改动。不能将本地main与缓存远端main混称；P0不引入RTC模型组件。 |
-| delta-paper-training-test | 2ab68c8b8090284fca6d258f86bf5098d2f1302b | 相对本地main新增shared/delta_paper.py、training/delta_paper.py、delta_paper_stats.py及实验/UI配置；build_experiment显式标注delta_arms_absolute_hands和actions统计[50,58]。本次数值对照固定此提交。 |
-| github/feat/trainrtc-correlated-t3（本地缓存） | bd2ee4077b236e9f64dbf135625269de8bf576e1 | 相对delta-paper新增训练RTC与T3集成、prefix与UI配置。已比较shared/delta_paper.py、training/delta_paper.py、fr3_sharpa_multimodal_policy.py：均无差异；不能据此推断整个模型/Batch行为相同。 |
-| paper-flash-test | 534ed023542a20dad55e1827b0a5adad9b760d4d | 已读scripts/flash/polynomial.py、shared/flash_polynomial.py、training/flash_dataset.py。包含现成离线多项式拟合/重建及source级split核验；P0-C优先复用适用的轻量实现。模型训练部分保持P0范围外。 |
+| 本地main | 4d0cb07e02181ed3bcdd876cad69446b22cfb075 | 58D协议、converter116位置适配、Delta/Absolute、Normalize/Unnormalize；基础契约和Delta分支相同 |
+| origin/main、github/main缓存 | 897cb917097c1d56a3fa7a517bf561b9e878036e | 比本地main多RTC模型/config/UI相关提交；基础数值方法另作对照 |
+| delta-paper-training-test | 2ab68c8b8090284fca6d258f86bf5098d2f1302b | T3桥接、bundle/normalization provenance、完整窗口、集合与采样配置 |
+| github/feat/trainrtc-correlated-t3缓存 | bd2ee4077b236e9f64dbf135625269de8bf576e1 | RTC+T3集成；核心shared/delta_paper、training/delta_paper和multimodal适配与Delta分支无差异 |
+| paper-flash-test | 534ed023542a20dad55e1827b0a5adad9b760d4d | NumPy多项式、JAX FLASH表示和source级数据分割；作为P0-C复用候选 |
 
-### FLASH分支中已存在的具体实现
+本地没有名为delta-paper的精确分支；对应现有引用为delta-paper-training-test及其后续RTC+T3集成分支。
 
-- `scripts/flash/polynomial.py`：仅NumPy；K为最高degree，K+1系数；显式区分state_relative和temporal_delta；普通网格0..49，constrained扩展网格-2..51，提供basis、pinv、速度及边界约束fit。适合P0-C从该固定提交整理进本仓库，再按E0/E1时间范围与预算要求核验；本次不提前实现完整拟合实验。
-- `src/openpi/shared/flash_polynomial.py`：依赖JAX；标准FLASH为54个扩展目标采样点（-2..51），此处54是时间点数，不能误判为Wuji 54D；50为重建horizon、58为本平台动作维度。包含history重参数化、缩放系数、目标边界投影，不应直接替换P0单段普通least-squares基线。
-- `src/openpi/training/flash_dataset.py`：依赖JAX、图像和视频/远程读取，含manifest/split指纹、source_recording_id跨集合排斥及normalization训练范围核验。训练计划另需历史和未来上下文（源码rows−58、start偏移7），不等于P0的N−50+1完整窗口，不能混用窗口计数或时间对齐。
-- 分支已有docs/flash和诊断/评估产物；本次只确认其存在及上述代码行为，没有运行其训练、重建或复核全部实验结果，不把已有结果当作本项目新证据。
+## 当前模块的复用方式
 
-后续来源选择：main提供常规数据与动作契约，delta-paper提供T3语义及统计一致性依据，FLASH分支提供离线轨迹工具候选。需要的代码整理到本仓库，不引入旧仓库运行路径依赖。
+| 原始路径（tomato-openpi） | 功能/58D | 依赖 | 方式与本仓库对应模块 |
+|---|---|---|---|
+| policies/fr3_sharpa_protocol.py | LA7,LH22,RA7,RH22逐关节名称与rad | NumPy | 本仓库action_schema保存独立显式契约，逐名称与原ORDER对照 |
+| policies/fr3_sharpa_multimodal_policy.py | converter116位置与converter58动作重排 | OpenPI/图像 | 提取必要的数值映射到action_schema，无模型/图像依赖；与main及Delta源码逐值比较 |
+| transforms.py | 锚点Delta/Absolute、quantile/zscore | 完整导入链重 | semantics和normalization本地数值实现，保留epsilon与无clip行为；四分支正逆变换对照 |
+| shared/delta_paper.py | T3 bridge、bundle/形状/哈希校验 | 数值部分NumPy | 适配为normalization和assets；保留源算法/许可证与Commit，增强数值、schema与身份检查；未引入噪声训练算法 |
+| training/norm_provenance.py | 数据文件内容与变换contract绑定 | OpenPI config/inspect | assets与manifest用显式契约替代训练config导入；比较实际repo/数量/FPS/files及独立expected contract |
+| training/dataset_collection.py | 多源Episode映射和feature一致性 | 标准库 | manifest本地实现，进一步检测重复内容/来源映射；不重写原ID |
+| training/delta_paper.py | CompleteWindows与PaperSharpaData | Torch/JAX/OpenPI | chunks/windows提供离线接口，额外校验时间/validity；原窗口索引对照通过；模型/训练适配类不引入 |
+| training/data_loader.py、sampling.py | LeRobot采样、Torch Batch与epoch_shuffle计划 | Torch/JAX/LeRobot | 仅读调查；未声称完整Batch等价，P0不复制训练采样器 |
+| scripts/flash/polynomial.py | K为degree、K+1系数；普通0..49与扩展-2..51拟合 | 仅NumPy | P0-C优先复用候选，本次未提前实现E0–E4 |
+| shared/flash_polynomial.py、training/flash_dataset.py | 历史重参数化/缩放/边界目标、source split与RGB | JAX/图像/远程读取 | 只读参考。54为扩展时间采样点数，不是54D动作；上下文窗口不能等同N−50+1 |
+
+原始路径相对于src/openpi，表中scripts路径除外。Apache-2.0文本及适配来源见third_party/openpi/LICENSE和NOTICE.md；用户自有工程代码按要求正常整理复用，不增加常规审批。代码路径不指向机器上的旧训练仓库。
+
+## 历史对照来源
+
+| 仓库/分支 | Commit | 读取与判断 |
+|---|---|---|
+| pi05/main | 09bab9d792aeed178644575efda40753cf974e51 | examples/fr3_wuji及policy是54D/20D手，不能套用58D Sharpa |
+| sharpa-pi05/train-rtc | a3997fbd72a6e758707f61c316d994962090f87e | 早期canonical58协议、30Hz导出、裁剪save_episode与source_start/end报告 |
+| convert_data_job-worker/auto-convert-transfer-ui | 8fea5fea8d6f1a2ee03e2f9d9e80c134cadf5bdb | schemas/sharpa_contract.yaml、formats/lerobot_v21.py、training/normal.py确认converter58/116、原始时间与段边界可保存；只读，没有导入转换或控制链 |
+
+## 一致性覆盖与边界
+
+compare_upstream.py从显式指定源仓库的固定Git对象读取已审阅定义，不切换分支、不写源目录，不属于普通运行依赖。main与缓存远端main各9项、Delta与RTC+T3各11项，共40项数值/映射/窗口检查通过。--check-assets另用临时合成bundle比较原load_bundle与本地assets，正常元信息/数组精确一致，四种配置不匹配和损坏哈希均拒绝（6项）。真实早期tier_a的首个Episode首/中/尾锚点编码与往返亦通过。
+
+合成统计只用于数学与失败路径验证，没有用于真实数据恢复。实际训练使用的T3 bundle仍缺失；视频同步、完整LeRobot解码/nearest timestamp/padding/Batch及部署发送未验证。FLASH分支已有结果仅确认存在，未作为本项目已复现实验。当前code完整性不等于正式实验完成。

@@ -9,8 +9,22 @@ def load_stats(path):
     if not path:
         raise ValueError('Missing normalization parameters; physical recovery unavailable')
     raw = json.loads(Path(path).read_text())
-    return {key: {k: np.asarray(v) for k, v in value.items() if v is not None}
-            for key, value in raw['norm_stats'].items()}
+    if not isinstance(raw, dict) or not isinstance(raw.get('norm_stats'), dict):
+        raise ValueError('norm_stats must be a JSON object')
+    result = {}
+    for key, value in raw['norm_stats'].items():
+        if not isinstance(value, dict):
+            raise ValueError('Each normalization entry must be an object')
+        result[key] = {}
+        for field, values in value.items():
+            if values is None:
+                continue
+            array = np.asarray(values)
+            if not np.issubdtype(array.dtype, np.number) or np.iscomplexobj(array) or not np.isfinite(array).all():
+                raise ValueError(f'Non-finite or nonnumeric normalization field {key}.{field}')
+            result[key][field] = array
+    return result
+
 
 
 def normalize(x, stats, *, method='quantile', inverse=False):
@@ -39,9 +53,9 @@ def arm_bridge(x, *, q01, q99, arm_mean, arm_std, std_floor, inverse=False):
     """T3 bridge AFTER global quantile on input; BEFORE unquantile on output.
 
     Arrays must come from the matching bundle. This API does not certify bundle
-    identity; full upstream manifest validation remains required for real T3 use.
+    identity; use assets.load_assets and pipeline.ActionCodec for bound T3 use.
     """
-    x = np.asarray(x)
+    x = np.asarray(x, dtype=np.result_type(np.asarray(x).dtype, np.float32))
     q01, q99, mean, std = map(np.asarray, (q01, q99, arm_mean, arm_std))
     if x.ndim < 2 or x.shape[-1] != 58 or q01.shape != x.shape[-2:] or q99.shape != q01.shape:
         raise ValueError('Full horizon quantile arrays required')

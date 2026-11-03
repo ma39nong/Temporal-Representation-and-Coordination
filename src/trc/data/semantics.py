@@ -4,7 +4,7 @@ from .action_schema import ARMS, canonicalize
 
 
 def transform_actions(actions, anchor_state, *, inverse=False):
-    x = canonicalize(actions, 'canonical58')
+    x = canonicalize(actions, 'canonical58').astype(np.result_type(np.asarray(actions).dtype, np.float32), copy=False)
     s = canonicalize(anchor_state, 'canonical58')
     if x.ndim < 2 or s.shape != x.shape[:-2] + (58,):
         raise ValueError('One anchor state per action chunk required')

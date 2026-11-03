@@ -19,3 +19,7 @@ outputs/*
 .env*
 configs/*.local.json
 configs/*.local.yaml
+
+/assets/
+build/
+dist/

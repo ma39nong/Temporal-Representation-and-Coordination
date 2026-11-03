@@ -1,0 +1,17 @@
+{
+  "horizon": 50,
+  "tolerance_s": 0.0001,
+  "datasets": [
+    {"id": "replace", "repo_id": "replace/real_repo_id", "root": "../datasets/replace", "layout": "converter58"}
+  ],
+  "source_mapping_path": null,
+  "normalization": {
+    "asset_dir": "../assets/replace",
+    "mode": "timestamp_zscore_arms",
+    "beta": 0.5,
+    "std_floor": 0.0001,
+    "expected_bundle_sha256": null,
+    "expected_norm_sha256": null,
+    "expected_contract_path": "../assets/replace/expected_contract.json"
+  }
+}

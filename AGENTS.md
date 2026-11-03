@@ -13,3 +13,5 @@
 - 新增接口必须覆盖合成异常测试。
 - 基础测试：python -m unittest discover -s tests -v；PyArrow仅用于Parquet读取。
 - 研究结论必须可证伪；公平控制系数预算，按原始recording分割数据，避免裁剪片段泄漏。
+
+- 日常入口为 `python -m trc`；数据处理实现放在src/trc，保持NumPy基础环境可测，PyArrow按需加载。统计校验须区分完整性、数据绑定与预期变换契约核验，真实资产缺失时不得标记真实验证完成。

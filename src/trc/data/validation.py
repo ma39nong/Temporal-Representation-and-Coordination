@@ -91,7 +91,7 @@ def audit_dataset(config):
             raise ValueError('Invalid metadata FPS')
     except (OSError, KeyError, TypeError, ValueError) as exc:
         report['errors'].append(str(exc))
-        report['status'] = 'blocked'
+        report['status'] = 'blocked' if isinstance(exc, OSError) else 'failed'
         return report
     ids, total, successful_reads = [], 0, 0
     for meta in adapter.episodes:
@@ -129,6 +129,8 @@ def audit_dataset(config):
             report['warnings'].append('统计已读取但未验证dataset/checkpoint/T3 bundle身份；不能据此宣称物理恢复已验证。')
         except (OSError, KeyError, TypeError, ValueError) as exc:
             report['warnings'].append('normalization:' + str(exc))
+    elif config.get('normalization'):
+        report['normalization']['status'] = 'checked_at_project_scope'
     else:
         report['warnings'].append('缺少匹配归一化参数；物理动作恢复和真实T3一致性未完成。')
     report['warnings'].append('RGB元信息已读取；未解码视频或验证视频帧同步。')

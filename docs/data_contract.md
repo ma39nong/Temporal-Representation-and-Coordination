@@ -42,7 +42,7 @@ LeRobot v2.1读取meta/info.json、meta/episodes.jsonl，按data_path/chunks_siz
 
 T3源实现从quantile坐标恢复双臂Delta，再以 `(delta−arm_mean)/max(arm_std,std_floor)` 替换双臂，双手保持quantile。这里没有在std上加1e−6；不能与通用zscore混同。默认floor在主仓库PaperSharpaData中为1e−4，但实际实验必须读配置/manifest，不在新接口中暗设此值。
 
-T3需要匹配的norm_stats.json、norm_metadata.json、delta_paper.json、delta_paper.npz及SHA-256。动作stats为[50,58]，arm_mean/arm_std为[50,14]，manifest验证mode、horizon、floor、beta、time-major、complete_only和数据contract。已有早期资产仅发现[58]统计，不能替代T3统计。load_stats仅解析JSON；arm_bridge仅提供数值接口，**未实现完整bundle身份验证，因此不允许宣称真实T3物理恢复已完成**。不估计、不填充虚构统计。没有锚点state时也无法恢复双臂绝对命令。
+T3需要匹配的norm_stats.json、norm_metadata.json、delta_paper.json、delta_paper.npz及SHA-256。动作stats为[50,58]，arm_mean/arm_std为[50,14]，manifest验证mode、horizon、floor、beta、time-major、complete_only和数据contract。已有早期资产仅发现[58]统计，不能替代T3统计。load_stats解析并校验数值JSON；assets.load_assets现已实现bundle内部完整性、实际数据内容绑定和独立预期契约比较，pipeline.ActionCodec串联完整编码解码。默认codec只接受verified资产。本机尚无匹配真实T3 bundle，因此**实现完成不等于真实T3物理恢复已完成**。不估计、不填充虚构统计。没有锚点state时也无法恢复双臂绝对命令。
 
 ## 时间段与窗口
 
@@ -51,3 +51,7 @@ P0接口仅提取同episode连续段内完整50帧窗口，不padding、不插�
 主训练仓库CompleteWindows仅据episode/frame_index筛完整窗口；本接口额外检查时间/原始时间断点，因此坏数据时有意更严格。通用LeRobot路径按round(k*fps/action_hz)/fps申请动作时间；其实际padding、最近邻容差和版本尚未端到端对照，不能声称全Batch等价。
 
 早期export_lerobot.py将裁剪段分别保存episode，外部导出报告可记录source_start/end_index和crop_interval；转换器v2.1另有source_timestamp_ns/segment metadata。元信息有能力保存不等于每份数据实际保留。时间戳局部连续不能证明裁剪前物理连续。缺失映射的数据只能用于标记为来源连续性未知的分析，不能跨episode拼接；分割训练/验证必须避免来自同一原始recording的裁剪片段泄漏。
+
+## 当前工程接口补充
+
+多源manifest对元信息与Parquet计算内容SHA，来源映射可通过独立source_mapping_path提供但不可与原元信息冲突。split按source_recording_id分组，不以Episode替代原始recording；原始映射缺失时阻塞正式split。iter_windows显式返回同帧锚点/时间与raw/canonical动作；validity_column仅接受真实一维boolean字段，不推断engagement语义。T3绑定还检查action_sequence_keys和action_hz；当前不重采样，要求action_hz等于实际FPS。用法与状态层级见usage.md。

@@ -40,7 +40,7 @@ def canonicalize(values, layout, state=False):
     dim = 116 if layout == 'converter58' and state else 58
     if layout not in LAYOUTS or x.ndim == 0 or x.shape[-1] != dim:
         raise ValueError(f'Invalid {layout} vector dimension; expected {dim}')
-    if not np.issubdtype(x.dtype, np.number) or not np.isfinite(x).all():
+    if not np.issubdtype(x.dtype, np.number) or np.iscomplexobj(x) or not np.isfinite(x).all():
         raise ValueError('Expected finite numeric joint values')
     if layout == 'canonical58':
         return x.copy()
