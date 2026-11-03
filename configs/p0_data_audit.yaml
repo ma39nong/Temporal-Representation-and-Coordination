@@ -1,0 +1,7 @@
+{
+  "dataset_root": null,
+  "layout": "canonical58",
+  "horizon": 50,
+  "tolerance_s": 0.0001,
+  "norm_stats_path": null
+}
