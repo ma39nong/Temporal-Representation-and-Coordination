@@ -2,7 +2,7 @@
 
 面向RA-L双臂灵巧操作研究的P0-A离线工程。平台：双FR3 + 双Sharpa，共58D，三路RGB，当前动作窗口50×58。当前不修改π₀.₅/Action Expert、不训练、不控制硬件；研究假设尚未验证。
 
-用户确认主训练仓库为 `tomato-openpi`：`delta-paper-training-test` / `2ab68c8b8090284fca6d258f86bf5098d2f1302b`。先读[代码复用清单](docs/code_reuse_audit.md)和[数据契约](docs/data_contract.md)。本项目提供独立轻量接口；未复制公司定制源码，未将完整OpenPI列为依赖。
+用户确认主训练仓库为 `tomato-openpi`：`delta-paper-training-test` / `2ab68c8b8090284fca6d258f86bf5098d2f1302b`。先读[代码复用清单](docs/code_reuse_audit.md)和[数据契约](docs/data_contract.md)。本仓库独立保存研究所需代码，运行和基础测试不依赖旧训练仓库。旧仓库名称和Commit仅用于记录实现来源；完整OpenPI不是当前依赖。
 
 ## 安装与命令
 
@@ -83,7 +83,7 @@ python3 -m venv .venv
 
 - 服务器311/480条正式训练集、连续多颗数据及匹配T3 bundle/norm_metadata/SHA尚未挂载确认；本次真实审计是本地早期数据，不替代正式数据审计。
 - 原始recording/裁剪映射、有效监督掩码、相机同步，以及固定LeRobot版本下的全Batch/nearest timestamp/padding一致性仍待验证。
-- 主训练仓库内部定制源码的公开权限未知，未复制；复杂训练组件后续走固定版本Adapter。
+- 后续需要的项目代码正常整理到本仓库，保留来源与第三方许可证；不通过机器上的旧仓库路径拼接运行环境。
 - P0-B先补齐正式数据和统计身份，核验真实编码/解码、来源映射与Batch；P0-C再按[计划](docs/experiment_plan.md)实现E0/E1和预算核算，之后做E2–E4。六阶Legendre每关节7系数，58D单段预算406；所有异构/分段方法必须控制总预算。
 
 研究假设、可证伪条件见[研究说明](docs/research_hypothesis.md)；FLASH、Coordi-π、RTC、MambaAct、T-Rex的原始来源和研究关系见[参考文献](docs/references.md)。本地提交不推送远端。
