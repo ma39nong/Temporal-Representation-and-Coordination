@@ -31,3 +31,7 @@
 ## 预期交付接口（尚未实现算法）
 
 P0-B：verified_dataset_manifest.json、normalization_identity.json、与原loader的真实Batch对照报告、来源分组split清单。P0-C：fit配置（basis/degree_by_group/stage_policy/budget）、逐窗口重建指标Parquet/JSON、budget accounting与配对bootstrap报告。先实现E0/E1及预算计算器，再实现E2，最后E3/E4；若门槛失败就记录失败原因。P0结束前不改Action Expert，不训练、不开展机器人控制。
+
+## 已有分支工具优先级补充
+
+开始P0-C前，先核对tomato-openpi的paper-flash-test固定提交534ed023542a20dad55e1827b0a5adad9b760d4d中scripts/flash/polynomial.py及其测试，将适合的NumPy代码整理进本仓库后再扩展，不重复从零开发。普通0..49拟合与FLASH扩展-2..51/历史/边界投影必须作为不同协议分别比较；FLASH训练数据窗口还要求上下文，不能复用其窗口计数冒充本项目完整50帧窗口。已有结果需要重新核验数据身份与实验设置后才能用于本项目结论。基础契约同时追溯main，T3行为追溯delta-paper；具体分支比较见code_reuse_audit.md。

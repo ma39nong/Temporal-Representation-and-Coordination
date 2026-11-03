@@ -31,3 +31,24 @@ compare_upstream.py 对同一带唯一值的合成输入验证真实源方法：
 本次真实数据读取来自早期canonical58布局，与主训练converter116路径分开记录。归一化资产只读查看到早期actions统计为[58]；未把它冒充T3的[50,58]统计。对照结果及数据集覆盖数量在README，完整产物在Git忽略的outputs。
 
 工程约定：来源仓库路径不属于运行依赖。src/trc内使用包内导入；只有可选的compare_upstream.py在显式指定--source-root时读取上游源码，日常审计和基础测试不需要旧训练仓库。数据及统计仍通过配置指定，不能混同为跨仓库代码依赖。
+
+## tomato-openpi 多分支补查
+
+此前P0-A主要读当前检出的delta-paper-training-test，未系统比较其他分支。现使用git show/git diff只读补查，不切换源仓库、不fetch；下列远端引用均是本地缓存，不能视为远端最新状态。本地未发现名为delta-paper的精确分支，实际对应delta-paper-training-test及其后续集成分支。
+
+| 引用 | 已核验Commit | 实际检查与复用判断 |
+|---|---|---|
+| 本地main | 4d0cb07e02181ed3bcdd876cad69446b22cfb075 | config.py已有58D Sharpa、converter116适配、Delta/Absolute开关。与delta-paper-training-test比较：fr3_sharpa_multimodal_policy.py、fr3_sharpa_protocol.py、training/config.py无差异；当前布局和基本动作语义继承自main，不是delta-paper独有实现。 |
+| origin/main、github/main（本地缓存） | 897cb917097c1d56a3fa7a517bf561b9e878036e | 比本地main多两次提交，增加训练时RTC相关模型/config/UI与测试改动。不能将本地main与缓存远端main混称；P0不引入RTC模型组件。 |
+| delta-paper-training-test | 2ab68c8b8090284fca6d258f86bf5098d2f1302b | 相对本地main新增shared/delta_paper.py、training/delta_paper.py、delta_paper_stats.py及实验/UI配置；build_experiment显式标注delta_arms_absolute_hands和actions统计[50,58]。本次数值对照固定此提交。 |
+| github/feat/trainrtc-correlated-t3（本地缓存） | bd2ee4077b236e9f64dbf135625269de8bf576e1 | 相对delta-paper新增训练RTC与T3集成、prefix与UI配置。已比较shared/delta_paper.py、training/delta_paper.py、fr3_sharpa_multimodal_policy.py：均无差异；不能据此推断整个模型/Batch行为相同。 |
+| paper-flash-test | 534ed023542a20dad55e1827b0a5adad9b760d4d | 已读scripts/flash/polynomial.py、shared/flash_polynomial.py、training/flash_dataset.py。包含现成离线多项式拟合/重建及source级split核验；P0-C优先复用适用的轻量实现。模型训练部分保持P0范围外。 |
+
+### FLASH分支中已存在的具体实现
+
+- `scripts/flash/polynomial.py`：仅NumPy；K为最高degree，K+1系数；显式区分state_relative和temporal_delta；普通网格0..49，constrained扩展网格-2..51，提供basis、pinv、速度及边界约束fit。适合P0-C从该固定提交整理进本仓库，再按E0/E1时间范围与预算要求核验；本次不提前实现完整拟合实验。
+- `src/openpi/shared/flash_polynomial.py`：依赖JAX；标准FLASH为54个扩展目标采样点（-2..51），此处54是时间点数，不能误判为Wuji 54D；50为重建horizon、58为本平台动作维度。包含history重参数化、缩放系数、目标边界投影，不应直接替换P0单段普通least-squares基线。
+- `src/openpi/training/flash_dataset.py`：依赖JAX、图像和视频/远程读取，含manifest/split指纹、source_recording_id跨集合排斥及normalization训练范围核验。训练计划另需历史和未来上下文（源码rows−58、start偏移7），不等于P0的N−50+1完整窗口，不能混用窗口计数或时间对齐。
+- 分支已有docs/flash和诊断/评估产物；本次只确认其存在及上述代码行为，没有运行其训练、重建或复核全部实验结果，不把已有结果当作本项目新证据。
+
+后续来源选择：main提供常规数据与动作契约，delta-paper提供T3语义及统计一致性依据，FLASH分支提供离线轨迹工具候选。需要的代码整理到本仓库，不引入旧仓库运行路径依赖。

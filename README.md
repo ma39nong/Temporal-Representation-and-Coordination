@@ -2,7 +2,7 @@
 
 面向RA-L双臂灵巧操作研究的P0-A离线工程。平台：双FR3 + 双Sharpa，共58D，三路RGB，当前动作窗口50×58。当前不修改π₀.₅/Action Expert、不训练、不控制硬件；研究假设尚未验证。
 
-用户确认主训练仓库为 `tomato-openpi`：`delta-paper-training-test` / `2ab68c8b8090284fca6d258f86bf5098d2f1302b`。先读[代码复用清单](docs/code_reuse_audit.md)和[数据契约](docs/data_contract.md)。本仓库独立保存研究所需代码，运行和基础测试不依赖旧训练仓库。旧仓库名称和Commit仅用于记录实现来源；完整OpenPI不是当前依赖。
+用户确认主训练仓库为 `tomato-openpi`：`delta-paper-training-test` / `2ab68c8b8090284fca6d258f86bf5098d2f1302b`。先读[代码复用清单](docs/code_reuse_audit.md)和[数据契约](docs/data_contract.md)。本仓库独立保存研究所需代码，运行和基础测试不依赖旧训练仓库。旧仓库名称和Commit仅用于记录实现来源；完整OpenPI不是当前依赖。已补查本地main、缓存远端main、delta-paper、RTC+T3与paper-flash分支，分支关系及现成多项式工具见复用清单。
 
 ## 安装与命令
 
