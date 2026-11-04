@@ -39,3 +39,7 @@ P0-B：verified_dataset_manifest.json、normalization_identity.json、与原load
 ## 当前已具备的工程接口
 
 manifest、recording_split、T3 assets身份校验、ActionCodec和iter_windows已在本仓库实现并有合成端到端测试；下一步复用这些接口接入正式数据，不再重复实现相同基础设施。assets-check与roundtrip仅在实际数据绑定及预期contract固定后标记verified。真实来源/统计仍待提供，因此P0-B前置门槛尚未全部满足。
+
+## 2026-11-04 当前优先级
+
+已完成FLASH Absolute P0-B最小数值验收与历史保存预测误差归因，见p0b_minimum_acceptance.md和flash_error_attribution.md。先分析表示→预测→时间关系，再决定Action Expert修改；E0–E4保留为候选，不在本轮开展全量训练。当前FullFT weights尚未保存，不将历史冻结模型与当前FullFT做步数消融。

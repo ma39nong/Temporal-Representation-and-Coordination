@@ -1,5 +1,7 @@
 # Temporal Representation and Coordination
 
+**当前阶段更新（2026-11-04）：P0-B Absolute FLASH最小数值验收通过，首组真实误差归因已完成。** 正式480集/451270帧与实际FLASH统计已读取；历史Step250固定505窗的表示/预测差异/总RMSE为0.002783/0.081599/0.081638 rad。当前FullFT检查到Step454、batch256、尚无落盘参数；归因来自已认证的历史冻结模型真实输出，不是当前FullFT新推理。详见[最小验收](docs/p0b_minimum_acceptance.md)、[科研结果](docs/flash_error_attribution.md)及[运行方式](docs/flash_attribution_usage.md)。
+
 面向双FR3＋双Sharpa（58D）、三路RGB和π₀.₅系统的独立P0研究工程。当前版本0.2提供完整的离线数据审计、数据来源管理、统计资产校验和动作编解码接口；研究假设尚未验证，不修改Action Expert、不启动训练或机器人控制。
 
 代码正常保存在本仓库，默认在main开发。`tomato-openpi`的main、Delta和RTC+T3分支提供已核验实现来源；旧仓库不是运行依赖。FLASH分支的多项式代码留作P0-C复用候选，本阶段未实现E0–E4完整算法。
@@ -54,7 +56,7 @@ python3 -m venv .venv
 
 新版多源审计读取本地tier_a、tier_b1、tier_c共143个Episode、129206帧，122199个完整50帧窗口。各目录可能存在同源或内容部分重叠，来源未核验前不视为独立示范数。另在P0-A已读episode284：1个Episode、1547帧、1498窗口。结果均为基础审计通过但有来源/统计警告。
 
-正式311/480条与连续多颗数据、匹配T3 bundle仍未在已检查路径找到；本地早期数据缺少所需原始recording映射，因此真实split按预期blocked。视频未解码、固定LeRobot完整Batch/最近邻/padding及部署行为未验证。`vector_contract_ready`仅表示本工具矢量契约条件满足；`formal_data_ready`目前始终false，不能把离线模块测试通过称作正式实验或实机验证完成。
+以下为P0-A当时的T3状态；本轮FLASH Absolute验收与归因见顶部新报告。T3匹配bundle仍未在已检查路径找到；本地早期数据缺少所需原始recording映射，因此真实split按预期blocked。视频未解码、固定LeRobot完整Batch/最近邻/padding及部署行为未验证。`vector_contract_ready`仅表示本工具矢量契约条件满足；`formal_data_ready`目前始终false，不能把离线模块测试通过称作正式实验或实机验证完成。
 
 详见[验证结果](docs/validation_results.md)、[数据契约](docs/data_contract.md)和[复用清单](docs/code_reuse_audit.md)。可选的源码一致性检查读取用户显式指定的旧仓库Git对象，不修改或切换其分支：
 

@@ -1,0 +1,13 @@
+{
+  "mode": "cached",
+  "source_root": "/path/to/tomato-openpi",
+  "runtime": "/path/to/openpi-environment/bin/python",
+  "expected_source_commit": "REPLACE_WITH_AUDITED_COMMIT",
+  "data_dir": "/path/to/existing_flash_numeric_cache",
+  "plan": "/path/to/fixed_evaluation_plan.json",
+  "audit": "/path/to/original_inference_audit.json",
+  "predictions": "/path/to/original_predictions.npz",
+  "checkpoint_reference": "/path/to/original_checkpoint_training_result.json",
+  "checkpoint_id": "REPLACE_WITH_ACTUAL_CHECKPOINT_ID",
+  "jax_platforms": "cpu"
+}

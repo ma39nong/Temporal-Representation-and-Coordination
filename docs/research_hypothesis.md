@@ -1,4 +1,6 @@
-# 研究假设：Temporal Representation and Coordination in Action Experts for Bimanual Dexterous Manipulation
+# 研究方向：Predictable and Coordination-Aware Action Generation for Bimanual Dexterous Manipulation
+
+当前优先研究问题：为什么连续轨迹表示重建误差较低，而Action Expert仍可能产生较大预测误差；这些误差是否影响关节组间时间关系？先依次量化表示误差、预测差异和最终动作误差，再决定Action Expert改造目标。下面的异构表示假设保留为后续候选，不预设为当前瓶颈。
 
 平台为双FR3（14D）与双Sharpa（44D），三路RGB，现有π₀.₅动作窗口50×58。当前P0仅研究离线示范的轨迹表示能力，不修改Action Expert，不训练，也不做控制。RA-L是目标投稿方向，尚无论文实验结论。
 

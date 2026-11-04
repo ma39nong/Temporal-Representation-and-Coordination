@@ -14,3 +14,13 @@ optional PyArrow APIs, dataset fingerprint checks without OpenPI model/config
 imports, explicit offline provenance and JSON reports. No driver/model/training
 modules or data assets are copied. Source names and commits are historical
 provenance, not runtime paths or dependencies. No new copyright holder is inferred.
+
+FLASH attribution integration (2026-11-04): an explicit, optional process adapter
+reuses the original paper-flash-test runtime at e64c9a41ecb24494ea6c81e2df3dd4bbbfdcc45c:
+shared/flash_polynomial.py, training/flash_data.py, flash_native.py,
+models/pi0_flash.py, model.py and scripts/flash/evaluate_p25.py. No original
+FLASH model or polynomial implementation is copied/reimplemented in trc. The
+standalone research code computes metrics, authenticates exported predictions
+and calls original APIs in their configured environment. Original math lineage
+from 534ed023542a20dad55e1827b0a5adad9b760d4d differs only in dataclass eq flag
+for flash_polynomial.py; target/history/reconstruction equations are unchanged.

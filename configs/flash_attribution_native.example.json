@@ -1,0 +1,13 @@
+{
+  "mode": "native",
+  "source_root": "/path/to/tomato-openpi",
+  "runtime": "/path/to/openpi-environment/bin/python",
+  "expected_source_commit": "REPLACE_WITH_AUDITED_COMMIT",
+  "experiment_module": "training_configs.experiments.REPLACE_WITH_EXACT_ACTUAL_EXPERIMENT",
+  "checkpoint": "/path/to/actual_run/8000",
+  "expected_step": 8000,
+  "training_contract": "/path/to/actual_run/flash_training_contract.json",
+  "expected_training_contract_sha256": "REPLACE_WITH_AUDITED_ACTUAL_TRAINING_CONTRACT_HASH",
+  "plan": null,
+  "jax_platforms": "cuda"
+}
