@@ -1,0 +1,12 @@
+{
+  "coordinates": {
+    "mode": "absolute",
+    "compatible_groups": ["left_arm", "left_hand", "right_arm", "right_hand"]
+  },
+  "reference": "measured_history_last",
+  "physical_action_semantics": "absolute_joint_position_rad",
+  "relative_normalization": "slope_only_using_original_training_action_quantile_span",
+  "coefficient_transform": "subtract_ideal_constant_after_original_fits",
+  "normalization_sha256": "REPLACE_WITH_MATCHING_TRAINING_ONLY_STATS_HASH",
+  "source_commit": "REPLACE_WITH_VERIFIED_SOURCE_COMMIT"
+}

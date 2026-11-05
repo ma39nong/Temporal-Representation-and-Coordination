@@ -1,0 +1,5 @@
+{
+  "manifest": "/path/to/training/flash_manifest.json",
+  "paired_inputs": "/path/to/fixed/paired_inputs.json",
+  "output": "/path/to/separate_research_output/source_audit.json"
+}

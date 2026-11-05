@@ -58,3 +58,7 @@ compare_upstream.py从显式指定源仓库的固定Git对象读取已审阅定�
 | 研究仓库原创 | `src/trc/analysis/flash/diagnosis.py` | 导出后逐阶物理误差归因、时间/合法当前state诊断 | NumPy | 本仓库实现；不是FLASH模型 | `scripts/diagnose_fullft.py` |
 
 实际Step4000/6000各505窗完成原API数值一致性核验，C_pred为直接张量，未使用历史线性恢复代替FullFT系数。代码、契约、权重hash及结果见 `p0c_fullft_diagnosis.md`。原代码运行依赖只由用户显式指定的原环境提供；普通研究包和基础测试无跨仓库导入、专有路径或CUDA依赖。
+
+## P1-0 状态相对坐标（2026-11-05）
+
+仍以 `paper-flash-test@d208d414` 为源。`scripts/audit_p1_sources.py` 只读复用原read_numeric与camera映射；`scripts/check_state_relative_source.py` 显式原环境加载原权重、原NativeDataset、原VLM条件、原Polynomial及coefficient_velocity/sample API。没有复制或修改Expert。新增 `trc.models.flash_coordinates` 是本仓库原创的无参数可逆坐标层，NumPy基础测试可独立运行；源环境仅在用户指定的一致性检查中调用。原ridge历史先拟合再平移，不重写历史锚定。复制数值、来源/相机/统计身份、真实Batch结果与数值复现限制见三份P1文档，B2未训练不作为性能结果。
