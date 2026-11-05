@@ -44,3 +44,17 @@
 compare_upstream.py从显式指定源仓库的固定Git对象读取已审阅定义，不切换分支、不写源目录，不属于普通运行依赖。main与缓存远端main各9项、Delta与RTC+T3各11项，共40项数值/映射/窗口检查通过。--check-assets另用临时合成bundle比较原load_bundle与本地assets，正常元信息/数组精确一致，四种配置不匹配和损坏哈希均拒绝（6项）。真实早期tier_a的首个Episode首/中/尾锚点编码与往返亦通过。
 
 合成统计只用于数学与失败路径验证，没有用于真实数据恢复。实际训练使用的T3 bundle仍缺失；视频同步、完整LeRobot解码/nearest timestamp/padding/Batch及部署发送未验证。FLASH分支已有结果仅确认存在，未作为本项目已复现实验。当前code完整性不等于正式实验完成。
+
+## P0-C FullFT 实测补充（2026-11-05）
+
+`paper-flash-test@d208d414efbb78483f44bfef4c2a9314115dd632`：原服务器与本地核验提交一致。下列均为58D适配后的真实源码核验，不根据文件名推断；无原训练文件修改。
+
+| 原仓库/Commit | 原文件 | 功能及58D | 重依赖 | 许可证/方式 | 对应研究模块 |
+|---|---|---|---|---|---|
+| tomato-openpi / d208d414 | `src/openpi/training/flash_native.py` | 原生window/observation、三RGB resize、state/action统计契约，Absolute58D | Torch/JAX/视频环境 | 原仓库既有许可及定制来源见NOTICE；Adapter，未复制实现 | `scripts/evaluate_fullft_paired_source.py` |
+| 同上 | `src/openpi/models/pi0_flash.py` | 原HAF、7×58 velocity、VLM条件、单步推理、物理解码 | Flax/JAX/OpenPI | Adapter；未复制或修改Expert | 同上 |
+| 同上 | `src/openpi/shared/flash_polynomial.py` | K6 history/54帧target拟合与50帧解码 | JAX | Adapter；不重写拟合 | 同上 |
+| 同上 | `src/openpi/models/model.py`、`training/flash_checkpoint.py` | 严格完整模型加载、参数身份 | Orbax/Flax | Adapter；不加载驱动/训练循环 | 同上 |
+| 研究仓库原创 | `src/trc/analysis/flash/diagnosis.py` | 导出后逐阶物理误差归因、时间/合法当前state诊断 | NumPy | 本仓库实现；不是FLASH模型 | `scripts/diagnose_fullft.py` |
+
+实际Step4000/6000各505窗完成原API数值一致性核验，C_pred为直接张量，未使用历史线性恢复代替FullFT系数。代码、契约、权重hash及结果见 `p0c_fullft_diagnosis.md`。原代码运行依赖只由用户显式指定的原环境提供；普通研究包和基础测试无跨仓库导入、专有路径或CUDA依赖。

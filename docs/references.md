@@ -11,3 +11,5 @@
 | T-Rex: Tactile-Reactive Dexterous Manipulation | [arXiv:2606.17055](https://arxiv.org/abs/2606.17055)、[项目](https://tactile-rex.github.io/) | 多速率MoT和时间触觉编码，启发非均匀时间需求；当前平台输入为RGB，不能假定具备该文触觉条件 |
 
 T-Rex有同名论文：2506.19498为Task-Adaptive Spatial Representation Extraction，1904.06387为reward extrapolation，均非本表所指。此处暂按双臂灵巧/多速率语境选择2606.17055；如研究团队另有所指需更新引用。
+
+P0-C补充（2026-11-05）：[ProAct / Beyond Reconstruction: What Matters in Action Tokenization for Robot Policies?](https://arxiv.org/abs/2610.09170) 将可预测性、鲁棒性作为action tokenization的研究问题。它是本项目“低重建误差不等于低策略误差”的相关工作，不能用其结论代替本平台实证。另有同名[ProAct / World-Calibrated Proposal-to-Action Flow](https://arxiv.org/abs/2610.02323)，不能混为同一论文。最小P1方案与这些工作的区别及待验证边界见 `p1_expert_design_options.md`。

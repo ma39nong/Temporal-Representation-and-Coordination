@@ -1,0 +1,14 @@
+{
+  "output": "/path/to/separate_research_output/export",
+  "checkpoint": "/path/to/original_run/6000",
+  "expected_step": 6000,
+  "training_contract": "/path/to/original_run/flash_training_contract.json",
+  "training_contract_sha256": "REPLACE_WITH_VERIFIED_TRAINING_CONTRACT_HASH",
+  "source_commit": "REPLACE_WITH_AUDITED_PAPER_FLASH_COMMIT",
+  "experiment_module": "training_configs.experiments.REPLACE_WITH_MATCHING_EXPERIMENT",
+  "paired_inputs": "/path/to/fixed_505_raw_window_and_rgb_identities.json",
+  "paired_inputs_sha256": "REPLACE_WITH_INPUT_IDENTITY_HASH",
+  "reference_arrays": "/path/to/fixed_505_gt_and_measured_history.npz",
+  "reference_arrays_sha256": "REPLACE_WITH_REFERENCE_HASH",
+  "script_sha256": "REPLACE_WITH_RESEARCH_EVALUATION_SCRIPT_HASH"
+}

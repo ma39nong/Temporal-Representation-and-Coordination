@@ -36,3 +36,7 @@ results目录含report.json、group_metrics.csv、temporal_metrics.csv、per_joi
 ## 同一窗口重复评估
 
 保持plan、数据/统计和导出顺序一致，分别导出不同Checkpoint。必须验证各窗口GT、Oracle、历史、来源一致后才比较，不以两份不同抽样的总均值推断训练效果。本轮Step100/Step250主结果共用uniform505 plan；813窗另列为Step100补充结果，不与505窗直接作训练步数对照。历史冻结VLM与当前FullFT即使步数相同，也不是受控消融。
+
+## P0-C 正式 FullFT 配对评估
+
+2026-11-05 已在原环境严格加载真实FullFT4000/6000，各完成固定505窗，先前“缺权重尚未真实推理”的状态仅对应P0-B旧记录。使用当前 `scripts/evaluate_fullft_paired_source.py` 与 `configs/p0c_fullft_paired.example.json`；复用原 `NativeDataset` 预处理和原采样API。离线入口 `scripts/diagnose_fullft.py`、`scripts/plot_fullft_diagnosis.py`、`scripts/compare_fullft_checkpoints.py`。完整命令、结果、source范围和限制见 `p0c_fullft_diagnosis.md`。历史cached模式及其系数恢复标记保持不变。

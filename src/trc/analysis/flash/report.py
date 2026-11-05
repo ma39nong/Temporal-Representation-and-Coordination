@@ -110,12 +110,12 @@ def build_report(export_dir, output, *, make_figures=True):
              'export_seal':seal,
              'analysis_code_sha256':{name:file_sha256(Path(__file__).with_name(name)) for name in ('report.py','metrics.py')},'research_git_commit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),
              'research_tracked_changes':subprocess.check_output(['git','status','--porcelain','--untracked-files=no'],text=True).strip(),
-             'limitations':['Saved historical predictions; no fresh checkpoint restore in cached mode',
+             'limitations':[('Saved historical predictions; no fresh checkpoint restore' if metadata.get('inference_mode','').startswith('authenticated_saved') else 'Fresh original checkpoint inference; no optimizer updates'),
                             'No comparison to current FullFT as a training-step ablation',
                             'Coefficient errors separated by degree/scale; recovered C_pred is labelled',
                             'Joint increment errors are not physical coordination failure metrics',
                             'No verified FK/phase labels or executed robot outcomes',
-                            'Held out relative to historical split, may overlap current all480 training sources']}
+                            'Inspect per-window training_source/scope; historical holdout does not imply current FullFT holdout']}
     write_report(output/'report.json',summary,protected=[export_dir])
     if make_figures:
         figures(output,arrays,metrics,metadata)

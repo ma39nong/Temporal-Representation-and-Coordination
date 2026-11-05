@@ -91,3 +91,5 @@ python3 -m venv .venv
 ```
 
 研究与公平系数预算见[假设](docs/research_hypothesis.md)和[实验计划](docs/experiment_plan.md)。六阶Legendre每关节7系数，58D单段预算406。先完成真实数据/统计/Batch核验，再复用FLASH轻量工具开展P0-C，不提前更改模型架构。
+
+P0-C（2026-11-05）：真实FullFT Step4000/6000已分别在固定505窗上完成配对诊断。训练来源与4个候选独立来源必须分开解读；尚无Step8000或物理协调失败证明。见[真实诊断报告](docs/p0c_fullft_diagnosis.md)和[唯一保留的P1最小方案](docs/p1_expert_design_options.md)。本轮未修改Expert、启动训练或控制机器人。
