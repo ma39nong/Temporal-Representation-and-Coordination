@@ -20,7 +20,10 @@ def figures(output, arrays, metrics, metadata):
     import matplotlib
     matplotlib.use('Agg')
     import matplotlib.pyplot as plt
-    data_label=f"REAL | {metadata['checkpoint_id']} | {metadata['evaluation_scope']}"
+    # Full server paths remain in the report; they overflow scientific figures.
+    display_id=(f"Checkpoint Step{metadata['checkpoint_step']}" if 'checkpoint_step' in metadata
+                else Path(metadata['checkpoint_id']).name[-50:])
+    data_label=f"REAL | {display_id} | {metadata['evaluation_scope']}"
     kinds=['representation','prediction','total'];colors=['#3d9970','#ff851b','#0074d9']
     lookup={(r['method'],r['group']):r for r in metrics['groups']}
     fig,ax=plt.subplots(figsize=(7.6,4.3),layout='constrained')
