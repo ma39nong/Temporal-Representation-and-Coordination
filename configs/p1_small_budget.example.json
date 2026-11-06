@@ -1,0 +1,68 @@
+{
+  "source_commit": "d208d414efbb78483f44bfef4c2a9314115dd632",
+  "experiment_module": "training_configs.experiments.tomato_sharpa.flash.snapshots.flash_all480_b512_step8000_20261104",
+  "research_runtime": "/path/to/research_runtime",
+  "replay_gate": "/path/to/replay_gate",
+  "replay_gate_sha256": "REPLACE_WITH_VERIFIED_REPLAY_GATE_SHA256",
+  "forward_gate": "/path/to/forward_gate",
+  "forward_gate_sha256": "REPLACE_WITH_VERIFIED_FORWARD_GATE_SHA256",
+  "expected_initial_parameter_files_identity": "REPLACE_WITH_VERIFIED_EXPECTED_INITIAL_PARAMETER_FILES_IDENTITY",
+  "initial_params": "/path/to/initial_params",
+  "output_root": "/path/to/output_root",
+  "run_id": "p1_seed42_step500_matched_v1",
+  "preflight_output": "/path/to/preflight_output",
+  "expected_dataset": {
+    "episodes": 480,
+    "frames": 451270,
+    "legal_windows": 423430,
+    "source_count": 480,
+    "data_policy": "all_sources",
+    "evaluation_scope": "training_data",
+    "training_action_semantics": "absolute",
+    "K": 6,
+    "stride": 1,
+    "manifest_sha256": "d27dd1d976f8766d096658f97c415a98e42576b4604e93c4845bd4e5b42368c2",
+    "normalization_sha256": "a5d7bd2dd422148736c69f1bf52a721d5770ba810f3bace9a2dd413395544d52",
+    "validation_sha256": "c763a1d9ca9989c5f35b1e92b37477d0ee82dbf43b7d5a960e421b536cec95ce",
+    "train_sources": 480,
+    "validation_sources": 0
+  },
+  "expected_optimizer": {
+    "b1": 0.9,
+    "b2": 0.95,
+    "eps": 1e-08,
+    "weight_decay": 1e-10,
+    "clip_gradient_norm": 1.0
+  },
+  "expected_schedule": {
+    "warmup_steps": 1000,
+    "peak_lr": 2.5e-05,
+    "decay_steps": 30000,
+    "decay_lr": 2.5e-06
+  },
+  "shared": {
+    "num_train_steps": 500,
+    "batch_size": 256,
+    "fsdp_devices": 8,
+    "train_dtype": "bfloat16",
+    "model_seed": 42,
+    "data_seed": 42001,
+    "augmentation_seed": 42002,
+    "flow_seed": 42
+  },
+  "trials": {
+    "B0": {
+      "coordinate_mode": "absolute"
+    },
+    "B2": {
+      "coordinate_mode": "state_relative"
+    }
+  },
+  "evaluation": {
+    "dtype": "float32",
+    "matmul_precision": "highest",
+    "batch_size": 1,
+    "num_steps": 1,
+    "padding": false
+  }
+}

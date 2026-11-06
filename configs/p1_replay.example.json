@@ -1,0 +1,33 @@
+{
+  "output": "/path/to/output",
+  "checkpoint": "/path/to/checkpoint",
+  "expected_step": 6000,
+  "training_contract": "/path/to/training_contract",
+  "training_contract_sha256": "REPLACE_WITH_VERIFIED_TRAINING_CONTRACT_SHA256",
+  "source_commit": "d208d414efbb78483f44bfef4c2a9314115dd632",
+  "experiment_module": "training_configs.experiments.tomato_sharpa.flash.snapshots.flash_all480_b512_step8000_20261104",
+  "paired_inputs": "/path/to/paired_inputs",
+  "paired_inputs_sha256": "REPLACE_WITH_VERIFIED_PAIRED_INPUTS_SHA256",
+  "reference_arrays": "/path/to/reference_arrays",
+  "reference_arrays_sha256": "REPLACE_WITH_VERIFIED_REFERENCE_ARRAYS_SHA256",
+  "window_indices": [
+    0,
+    173
+  ],
+  "coordinates": {
+    "mode": "state_relative",
+    "compatible_groups": [
+      "left_arm",
+      "left_hand",
+      "right_arm",
+      "right_hand"
+    ]
+  },
+  "seeds": [
+    0,
+    1,
+    42
+  ],
+  "research_runtime": "/path/to/research_runtime",
+  "evaluation_precision": "float32"
+}

@@ -62,3 +62,17 @@ compare_upstream.py从显式指定源仓库的固定Git对象读取已审阅定�
 ## P1-0 状态相对坐标（2026-11-05）
 
 仍以 `paper-flash-test@d208d414` 为源。`scripts/audit_p1_sources.py` 只读复用原read_numeric与camera映射；`scripts/check_state_relative_source.py` 显式原环境加载原权重、原NativeDataset、原VLM条件、原Polynomial及coefficient_velocity/sample API。没有复制或修改Expert。新增 `trc.models.flash_coordinates` 是本仓库原创的无参数可逆坐标层，NumPy基础测试可独立运行；源环境仅在用户指定的一致性检查中调用。原ridge历史先拟合再平移，不重写历史锚定。复制数值、来源/相机/统计身份、真实Batch结果与数值复现限制见三份P1文档，B2未训练不作为性能结果。
+
+## P1-1：固定原始架构的实验入口（2026-11-06）
+
+只读依据仍为 `paper-flash-test@d208d414`，不跟随本机当前其他工作分支。
+
+| 原始模块 | 复用方式 | 研究对应变化 |
+|---|---|---|
+| `Pi0Flash` / `Pi0FlashConfig` | 继承、Adapter；原Absolute直接super | `trc.models.flash_openpi`只增加静态coordinate_mode及必要的系数坐标变换，无新参数 |
+| `FlashPolynomial` | 原fit/target边界/reconstruct | 无更改；保留ridge历史先fit后平移 |
+| `scripts.train_flash.main/step` | 显式原runtime Dependency | `prepare_p1_training_source.py`仅替换模型Config和新输出/共同预算；优化器/FSDP/噪声/采样/Checkpoint不复制 |
+| `NativeDataset.index/observation` | 原接口 | 两配置前128000窗口逐项hash核对；预处理与时间/动作映射不重写 |
+| 原 `sample_actions` | 原API数值对照 | 分层trace定位低精度图敏感性；共同FP32三入口严格gate |
+
+小段原系数loss/积分逻辑在派生类中适配，来源及Apache-2.0许可见third_party/openpi/NOTICE.md。普通NumPy包不隐式导入OpenPI；这些模块仅由用户显式指定的原运行环境使用。训练启动开关本轮未调用。

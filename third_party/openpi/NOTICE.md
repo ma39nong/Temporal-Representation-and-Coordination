@@ -24,3 +24,11 @@ standalone research code computes metrics, authenticates exported predictions
 and calls original APIs in their configured environment. Original math lineage
 from 534ed023542a20dad55e1827b0a5adad9b760d4d differs only in dataclass eq flag
 for flash_polynomial.py; target/history/reconstruction equations are unchanged.
+
+P1-1 extension: `src/trc/models/flash_openpi.py` subclasses the original
+`Pi0Flash`/`Pi0FlashConfig` and adapts the small coefficient-loss/integration
+routines from tomato-openpi `paper-flash-test@d208d414efbb78483f44bfef4c2a9314115dd632`
+(`src/openpi/models/pi0_flash.py`). The unchanged backbone, polynomial fitting,
+optimizer and FSDP trainer remain explicit source-runtime dependencies. Only
+coordinate transforms and experiment guards are added. OpenPI's Apache-2.0
+license remains in this directory; no original copyright notices were removed.

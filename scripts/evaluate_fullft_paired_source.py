@@ -12,6 +12,8 @@ from pathlib import Path
 import subprocess
 import sys
 import time
+import os
+from dataclasses import replace
 sys.dont_write_bytecode=True
 import numpy as np
 
@@ -48,7 +50,18 @@ def main(config_path):
     contract=json.loads(Path(cfg['training_contract']).read_text())
     experiment=bind_stats(load_experiment(cfg['experiment_module']))
     verified=preflight(experiment)
-    if verified!=contract['dataset'] or str(experiment.model)!=contract['model']:raise ValueError('Actual model/data/normalization contract mismatch')
+    training_model=experiment.model
+    if 'coordinate_mode' in cfg:
+        import site
+        site.addsitedir(cfg['research_runtime'])
+        from trc.models import flash_openpi
+        from trc.models.flash_openpi import CoordinateFlashConfig
+        if sha(flash_openpi.__file__)!=cfg['expected_adapter_sha256']:raise ValueError('Training adapter identity mismatch')
+        if cfg.get('evaluation_precision')!='float32' or os.environ.get('JAX_DEFAULT_MATMUL_PRECISION')!='highest':raise ValueError('Paired P1 evaluation requires shared FP32/highest policy')
+        if not all(flag in os.environ.get('XLA_FLAGS','') for flag in ('--xla_gpu_autotune_level=0','--xla_gpu_deterministic_ops=true')):raise ValueError('Pinned XLA policy required')
+        training_model=CoordinateFlashConfig.from_base(training_model,cfg['coordinate_mode'])
+    if verified!=contract['dataset'] or str(training_model)!=contract['model']:raise ValueError('Actual model/data/normalization contract mismatch')
+    inference_model=replace(training_model,dtype=cfg['evaluation_precision']) if cfg.get('evaluation_precision') else training_model
     if experiment.model.freeze_vlm or experiment.data.extra_delta_transform:raise ValueError('Expected FullFT Absolute model')
     # Full checkpoint supplies every leaf, including vision and language. No partial/random load.
     params=model_lib.restore_params(checkpoint/'params',restore_type=np.ndarray)
@@ -59,7 +72,7 @@ def main(config_path):
         counts[group]+=1;elements[group]+=int(np.size(value))
     if not all(counts.values()):raise ValueError('Incomplete VLM/expert checkpoint')
     parameter_hash=parameter_digest(params)
-    model=experiment.model.load(jax.device_put(params),remove_extra_params=False);model.eval();del params,flat
+    model=inference_model.load(jax.device_put(params),remove_extra_params=False);model.eval();del params,flat
     data=NativeDataset(experiment,tokenizer=PaligemmaTokenizer(max_len=experiment.model.max_token_len))
     inputs=json.loads(Path(cfg['paired_inputs']).read_text())
     reference=np.load(cfg['reference_arrays'],allow_pickle=False)
@@ -83,7 +96,7 @@ def main(config_path):
         obs=model_lib.preprocess_observation(None,obs,train=False)
         mask,cache=m.encode_condition(obs)
         source=m.polynomial.fit_history(m.normalize(history))
-        coeff=source+m.coefficient_velocity(source,jnp.zeros((1,)),mask,cache)
+        coeff=(m.sample_coefficients_from_cache(mask,cache,history=history,num_steps=1) if hasattr(m,'sample_coefficients_from_cache') else source+m.coefficient_velocity(source,jnp.zeros((1,)),mask,cache))
         prediction=m.denormalize(m.polynomial.reconstruct(coeff))
         direct=m.sample_from_cache(mask,cache,history=history,num_steps=1)
         return coeff,prediction,direct
@@ -130,9 +143,9 @@ def main(config_path):
           'checkpoint_id':str(checkpoint),'checkpoint_step':cfg['expected_step'],'checkpoint_parameter_sha256':parameter_hash,
           'checkpoint_files_unchanged':True,'checkpoint_completion':completion,'parameter_leaf_counts':counts,'parameter_elements':elements,
           'strict_load_remove_extra_params':False,'source_commit':cfg['source_commit'],'upstream_runtime_commit':cfg['source_commit'],
-          'freeze_vlm':False,'optimizer_updates':0,'action_semantics':'absolute','action_unit':'rad','K':6,'coefficient_tokens':7,
+          'freeze_vlm':False,'coordinate_mode':cfg.get('coordinate_mode','absolute'),'evaluation_precision':inference_model.dtype,'optimizer_updates':0,'action_semantics':'absolute','action_unit':'rad','K':6,'coefficient_tokens':7,
           'history_ticks':[-7,0],'target_ext_ticks':[-2,51],'horizon_ticks':[0,49],'c_pred_origin':'direct_model_tensor',
-          'window_count':len(rows),'windows':rows,'dataset':verified,'training_contract_sha256':sha(cfg['training_contract']),
+          'window_count':len(rows),'windows':rows,'dataset':verified,'training_protocol':{k:contract[k] for k in ('model_seed','data_seed','flow_seed','augmentation_seed','batch_size','optimizer','schedule','sampler') if k in contract},'training_contract_sha256':sha(cfg['training_contract']),
           'normalization_sha256':verified['normalization_sha256'],'historical_plan_sha256':inputs['historical_plan_sha256'],
           'paired_gt_history_exact':True,'rgb_raw_pixels_exact':True,'rgb_sequence_sha256':hashlib.sha256(''.join(rgb_hashes).encode()).hexdigest(),
           'input_preprocessing':'original NativeDataset.resize_image/state quantile/tokenizer with CURRENT checkpoint stats',

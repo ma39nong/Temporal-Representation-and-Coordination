@@ -1,14 +1,14 @@
 # Temporal Representation and Coordination
 
-**当前阶段更新（2026-11-04）：P0-B Absolute FLASH最小数值验收通过，首组真实误差归因已完成。** 正式480集/451270帧与实际FLASH统计已读取；历史Step250固定505窗的表示/预测差异/总RMSE为0.002783/0.081599/0.081638 rad。当前FullFT检查到Step454、batch256、尚无落盘参数；归因来自已认证的历史冻结模型真实输出，不是当前FullFT新推理。详见[最小验收](docs/p0b_minimum_acceptance.md)、[科研结果](docs/flash_error_attribution.md)及[运行方式](docs/flash_attribution_usage.md)。
+**当前阶段（2026-11-06）：P1-1 基线严格复现与配对500步训练准备通过，`P1 SMALL-BUDGET TRAINING READY`。** 共同FP32/highest评价中三入口最大差4.77e−7 rad，两次独立进程一致；B0/B2初始化资产、参数布局及前128000个训练窗口序列已核对。本轮未训练，B2有效性仍待验证。见[复现证据](docs/p1_replay_parity.md)、[q0物理分析](docs/p1_reference_state_analysis.md)及[小预算协议与命令](docs/p1_small_budget_training_plan.md)。
 
-面向双FR3＋双Sharpa（58D）、三路RGB和π₀.₅系统的独立P0研究工程。当前版本0.2提供完整的离线数据审计、数据来源管理、统计资产校验和动作编解码接口；研究假设尚未验证，不修改Action Expert、不启动训练或机器人控制。
+面向双FR3＋双Sharpa（58D）、三路RGB和π₀.₅系统的独立研究工程。基础包提供NumPy离线数据/误差分析；可选原环境适配层保留原FLASH架构，只研究动作坐标。代码保存在本仓库，默认main开发；原训练工程、数据和权重只读，不自动启动GPU训练或机器人控制。
 
-代码正常保存在本仓库，默认在main开发。`tomato-openpi`的main、Delta和RTC+T3分支提供已核验实现来源；旧仓库不是运行依赖。FLASH分支的多项式代码留作P0-C复用候选，本阶段未实现E0–E4完整算法。
+普通运行与基础测试不依赖旧仓库。只有用户显式选择的FLASH推理/训练准备入口使用固定版本OpenPI运行环境；不复制整个训练工程，不使用隐式源路径。历史P0-A/B/C与P1-0结果按各报告日期和数值协议解读，不将其BF16旧图指标混作新FP32受控评价。
 
 ## 安装与快速运行
 
-Python≥3.10，基础环境只需NumPy；Parquet额外需要PyArrow。没有OpenPI、Torch、JAX、CUDA、ROS或机器人驱动依赖。
+Python≥3.10，基础环境只需NumPy；Parquet额外需要PyArrow。基础测试无需OpenPI、Torch、JAX、CUDA、ROS或机器人驱动；可选FLASH原环境入口另需已核验的训练依赖。
 
 ```bash
 python3 -m venv .venv
@@ -95,3 +95,5 @@ python3 -m venv .venv
 P0-C（2026-11-05）：真实FullFT Step4000/6000已分别在固定505窗上完成配对诊断。训练来源与4个候选独立来源必须分开解读；尚无Step8000或物理协调失败证明。见[真实诊断报告](docs/p0c_fullft_diagnosis.md)和[唯一保留的P1最小方案](docs/p1_expert_design_options.md)。本轮未修改Expert、启动训练或控制机器人。
 
 P1-0：已完成[物理偏移分解](docs/p1_offset_decomposition.md)、[状态相对坐标假设与真实Batch检查](docs/p1_state_relative_hypothesis.md)和[B0/B1/B2受控协议](docs/p1_controlled_experiment.md)。候选来源的整体偏移假设得到描述性支持；无参数坐标适配器已实现，B2尚未训练。基线跨执行图/进程的数值复现问题仍需闭合，当前不建议直接启动正式FullFT。
+
+P1-1（2026-11-06）：[数值复现已闭合](docs/p1_replay_parity.md)，后续B0/B2共享FP32/highest评价；[q0首步残差与时移诊断](docs/p1_reference_state_analysis.md)保留真实命令—反馈差异；[配对500步训练准备](docs/p1_small_budget_training_plan.md)通过CPU gate，默认入口只做preflight。本轮未训练。状态：`P1 SMALL-BUDGET TRAINING READY`，不代表B2有效或最终论文验证完成。
