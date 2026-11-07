@@ -76,3 +76,9 @@ compare_upstream.py从显式指定源仓库的固定Git对象读取已审阅定�
 | 原 `sample_actions` | 原API数值对照 | 分层trace定位低精度图敏感性；共同FP32三入口严格gate |
 
 小段原系数loss/积分逻辑在派生类中适配，来源及Apache-2.0许可见third_party/openpi/NOTICE.md。普通NumPy包不隐式导入OpenPI；这些模块仅由用户显式指定的原运行环境使用。训练启动开关本轮未调用。
+
+## P1-2：实际配对执行（2026-11-07）
+
+用户授权后，使用同一`d208d414`原`train_flash.main/step`顺序完成B0/B2各500次更新。`run_p1_pilot_source.py`只包裹保存、恢复及记录接口：两组一致地保存0/3/100/250/500，在第3步结束进程再恢复，参数及Adam完整字节相同；无训练循环、模型、优化器或Loader的大规模复制。原程序文件未修改。P1-1的坐标Adapter代码SHA保持不变。
+
+`report_p1_pilot.py`组合本仓库已有物理误差、偏移和系数贡献函数，仅增加本次配对聚合及图表。评估沿用原`NativeDataset`和FLASH推理；外部数据整理造成的3个record路径变化只在新研究输入清单中指向只读备份，逐窗验证505个GT/history和1515个原RGB哈希相同。详见`p1_2_pilot_training_results.md`；未引入硬件控制或新Expert。

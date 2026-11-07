@@ -1,8 +1,8 @@
 # Temporal Representation and Coordination
 
-**当前阶段（2026-11-06）：P1-1 基线严格复现与配对500步训练准备通过，`P1 SMALL-BUDGET TRAINING READY`。** 共同FP32/highest评价中三入口最大差4.77e−7 rad，两次独立进程一致；B0/B2初始化资产、参数布局及前128000个训练窗口序列已核对。本轮未训练，B2有效性仍待验证。见[复现证据](docs/p1_replay_parity.md)、[q0物理分析](docs/p1_reference_state_analysis.md)及[小预算协议与命令](docs/p1_small_budget_training_plan.md)。
+**当前阶段（2026-11-07）：P1-2 B0/B2各500步真实训练及8×505窗配对评价完成，`B2 PROMISING`（仅限本次均值/偏移诊断）。** Step500训练来源RMSE为0.038534→0.034077 rad，候选来源为0.148204→0.082579 rad；但8个训练来源及部分尾部误差退化，候选中两个来源现有外部rejected标签，因此暂不延长训练，不能宣称独立泛化或实机成功。见[完整训练结果、图表与限制](docs/p1_2_pilot_training_results.md)。P1-1的[复现证据](docs/p1_replay_parity.md)、[q0分析](docs/p1_reference_state_analysis.md)和[受控协议](docs/p1_small_budget_training_plan.md)保留追溯。
 
-面向双FR3＋双Sharpa（58D）、三路RGB和π₀.₅系统的独立研究工程。基础包提供NumPy离线数据/误差分析；可选原环境适配层保留原FLASH架构，只研究动作坐标。代码保存在本仓库，默认main开发；原训练工程、数据和权重只读，不自动启动GPU训练或机器人控制。
+面向双FR3＋双Sharpa（58D）、三路RGB和π₀.₅系统的独立研究工程。基础包提供NumPy离线数据/误差分析；可选原环境适配层保留原FLASH架构，只研究动作坐标。代码保存在本仓库，默认main开发；原训练工程、数据和已有权重只读，仅在用户明确授权范围内执行训练，不进行机器人控制。
 
 普通运行与基础测试不依赖旧仓库。只有用户显式选择的FLASH推理/训练准备入口使用固定版本OpenPI运行环境；不复制整个训练工程，不使用隐式源路径。历史P0-A/B/C与P1-0结果按各报告日期和数值协议解读，不将其BF16旧图指标混作新FP32受控评价。
 
