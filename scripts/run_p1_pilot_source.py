@@ -154,7 +154,7 @@ def main():
                 pickle.dump(config, stream)
             (audit / 'execution_identity.json').write_text(json.dumps(
                 {**identity, 'sealed_config_sha256': sha(audit / 'sealed_config.pkl')}, indent=2) + '\n')
-            config = replace(config, num_train_steps=0 if transfer else 3)
+            if not transfer:config = replace(config, num_train_steps=3)
         elif transfer and args.phase == 'precheck':
             gate = json.loads(Path(cfg['step0_gate']).read_text())
             if gate['status'] != 'STEP0_PAIR_VERIFIED' or gate['config_sha256'] != sha(args.config):raise ValueError('Step0 pair not verified')
@@ -173,7 +173,23 @@ def main():
             (root / name).mkdir(parents=True, exist_ok=True)
         os.environ['TMPDIR'] = str(root / 'tmp')
         os.environ['WANDB_DIR'] = str(root / 'wandb')
-        original_main(config)
+        if transfer and args.phase == 'initialize':
+            # The source TrainConfig requires positive num_train_steps. Stop at
+            # the tracking context immediately before the first update, AFTER
+            # its original initialization, Step0 save and contract writing.
+            from openpi.training import tracking
+            class InitializationComplete(Exception):pass
+            original_session = tracking.session
+            def stop_before_updates(*a, **kw):raise InitializationComplete()
+            tracking.session = stop_before_updates
+            try:
+                original_main(config)
+            except InitializationComplete:
+                pass
+            finally:
+                tracking.session = original_session
+        else:
+            original_main(config)
         expected_step = 0 if args.phase == 'initialize' else (3 if args.phase == 'precheck' else budget)
         marker = Path(config.checkpoint_dir) / str(expected_step) / '_CHECKPOINT_METADATA'
         if not json.loads(marker.read_text()).get('commit_timestamp_nsecs'):
