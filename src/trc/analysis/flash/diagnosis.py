@@ -3,6 +3,32 @@ import numpy as np
 from .metrics import EVAL_GROUPS, summary
 
 
+def paired_component_gain(truth, oracle, prediction0, prediction2, components0, components2):
+    """Signed allocation of B0 minus B2 FINAL MSE, including oracle interaction.
+
+    Components have shape (window, degree, tick, joint) in physical units.
+    Cross-degree terms are shared symmetrically; allocations can be negative.
+    Float decode remainder is reported separately, never silently discarded.
+    This is a post-hoc algebraic decomposition, not causal importance.
+    """
+    a,o,p0,p2,c0,c2=map(lambda x:np.asarray(x,np.float64),
+                       (truth,oracle,prediction0,prediction2,components0,components2))
+    if a.ndim!=3 or any(x.shape!=a.shape for x in (o,p0,p2)) or c0.ndim!=4 or c2.shape!=c0.shape or c0.shape[:1]+c0.shape[2:]!=a.shape:
+        raise ValueError('Aligned trajectories and physical degree components required')
+    if not all(np.isfinite(x).all() for x in (a,o,p0,p2,c0,c2)):
+        raise ValueError('Finite inputs required')
+    s0,s2=p0-o,p2-o;g=o-a
+    u0,u2=s0-c0.sum(axis=1),s2-c2.sum(axis=1)
+    residual_max=max(float(np.max(np.abs(u0))),float(np.max(np.abs(u2))))
+    if residual_max>3e-5:raise ValueError('Components do not reproduce decoded actions')
+    allocation=np.mean(c0*s0[:,None]-c2*s2[:,None]+2*g[:,None]*(c0-c2),axis=(0,2,3))
+    remainder=float(np.mean(u0*s0-u2*s2+2*g*(u0-u2)))
+    gain=float(np.mean((p0-a)**2)-np.mean((p2-a)**2))
+    np.testing.assert_allclose(allocation.sum()+remainder,gain,atol=1e-12,rtol=1e-9)
+    return {'signed_final_mse_gain':allocation,'roundoff_gain':remainder,
+            'total_mse_gain':gain,'decode_remainder_max_rad':residual_max}
+
+
 def coefficient_contributions(truth, oracle, prediction, c_gt, c_pred, scale, basis, q01, q99):
     """Exact additive decoded residuals with explicit interaction and oracle repair.
 
