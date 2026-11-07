@@ -1,6 +1,6 @@
 # Temporal Representation and Coordination
 
-**当前阶段（2026-11-07）：P1-4已核验并复用原FLASH FullFT Step8000，未启动训练。** 三个Checkpoint的模型、Adam状态和匹配统计均可读取；统一FP32重评4000/6000/8000，训练来源RMSE为0.014757→0.011712→0.009867rad，候选20窗为0.228748→0.228203→0.226701rad，候选偏移占MSE仍达98.84%。建议复用Step8000参数设计250步/组的同初始化B0/B2微调，不能将未拒绝或失败候选当作独立成功泛化结果。见[权重核验、真实指标与微调方案](docs/p1_4_fullft_reuse.md)。[P1-3机制分析](docs/p1_3_mechanism_analysis.md)和[P1-2配对训练](docs/p1_2_pilot_training_results.md)保留各自结论与比较边界；对新Expert架构仍需更多证据。P1-1的[复现证据](docs/p1_replay_parity.md)、[q0分析](docs/p1_reference_state_analysis.md)和[受控协议](docs/p1_small_budget_training_plan.md)保留追溯。
+**当前阶段（2026-11-07）：P1-5同Step8000初始化的B0/B2各250步配对微调与8×505窗评价已完成，`MIXED RESULTS`。** B0/B2终点RMSE：训练来源0.007730/0.015527rad，未拒绝候选0.242875/0.062107rad，失败示范0.215549/0.068484rad。B2候选主收益在零更新切换时已出现；训练97来源均差于原模型与B0，左臂末9步和尾部仍有代价，不能宣称独立成功泛化或实机改善。见[实际迁移结果、Step0效应与三层对照](docs/p1_5_step8000_transfer_results.md)。[P1-4权重核验](docs/p1_4_fullft_reuse.md)、[P1-3机制分析](docs/p1_3_mechanism_analysis.md)和[P1-2基础权重配对训练](docs/p1_2_pilot_training_results.md)保留各自比较边界；不自动延长训练或开发新Expert。P1-1的[复现证据](docs/p1_replay_parity.md)、[q0分析](docs/p1_reference_state_analysis.md)和[受控协议](docs/p1_small_budget_training_plan.md)保留追溯。
 
 面向双FR3＋双Sharpa（58D）、三路RGB和π₀.₅系统的独立研究工程。基础包提供NumPy离线数据/误差分析；可选原环境适配层保留原FLASH架构，只研究动作坐标。代码保存在本仓库，默认main开发；原训练工程、数据和已有权重只读，仅在用户明确授权范围内执行训练，不进行机器人控制。
 

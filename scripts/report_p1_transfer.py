@@ -76,7 +76,7 @@ def main():
     (out/'identity.json').write_text(json.dumps({'data_kind':'real','exports':identities,'code_sha256':file_sha256(__file__),'same_inputs_oracle':True,
        'quality_classification_sha256':file_sha256(a.review),'inference':'FP32/highest NFE1; no future target in prediction; exploratory candidates only',
        'coefficient_interpretation':'Error in restored Absolute coefficient coordinates; actual basis/scale/quantile used; signed contribution to P-minus-Oracle MSE, not GT-total MSE.'},indent=2)+'\n')
-    plot(out,metrics,offsets,times,arrays,max(a.steps))
+    plot(out,metrics,offsets,times,contributions,arrays,max(a.steps))
     if a.training_root:training_report(Path(a.training_root),out)
     print(json.dumps({'output':str(out),'models':len(entries),'main_metrics':[r for r in metrics if r['scope'] in list(scopes)[:3] and r['group']=='full_action' and r['interval']=='all50']},indent=2))
 
@@ -93,9 +93,14 @@ def training_report(root,out):
         audit=root/'runs/execution'/trial;initial=json.loads((audit/'initial_state.json').read_text());saved=json.loads((audit/'saved_state_3.json').read_text());restored=json.loads((audit/'restored_state.json').read_text())
         if any(saved[k]!=restored[k] for k in ('params_sha256','opt_state_sha256','completed_step')):raise ValueError('Restore differs')
         steady=[r for r in rows if r['step'] not in (1,4)];stats[trial]={'accepted_updates':250,'sample_positions':64000,'initial':initial,
+            'first20_loss':statistics.mean(r['loss'] for r in rows[:20]),
             'last20_loss':statistics.mean(r['loss'] for r in rows[-20:]),'median_step_plus_io_seconds':statistics.median(r['seconds']+r['data_wait_seconds'] for r in steady),'restored_step3_byte_identical':True,
+            'first20_gradient_norm':statistics.mean(r['gradient_norm'] for r in rows[:20]),
+            'last20_gradient_norm':statistics.mean(r['gradient_norm'] for r in rows[-20:]),
+            'gradient_norm_above_common_clip1_steps':sum(r['gradient_norm']>1 for r in rows),
             'gpu0_jax_peak_bytes':max(r['peak_device_bytes'] for r in rows),'training_log_sha256':file_sha256(path)};logs[trial]=rows
     if any(stats['B0']['initial'][k]!=stats['B2']['initial'][k] for k in ('params_sha256','opt_state_sha256')):raise ValueError('Initial pair differs')
+    if [(r['step'],r['learning_rate'],r['effective_samples']) for r in logs['B0']]!=[(r['step'],r['learning_rate'],r['effective_samples']) for r in logs['B2']]:raise ValueError('Actual LR or sample budget differs')
     (out/'training_summary.json').write_text(json.dumps(stats,indent=2)+'\n');csv_rows(out/'training_steps.csv',[{'trial':t,**r} for t,rows in logs.items() for r in rows])
     fig,axes=plt.subplots(1,3,figsize=(13,4),layout='constrained')
     for trial,rows in logs.items():
@@ -104,7 +109,7 @@ def training_report(root,out):
     fig.suptitle('REAL transfer training; 3-step precheck included in250');fig.savefig(out/'training_loss.png',dpi=170);plt.close(fig)
 
 
-def plot(out,metrics,offsets,times,arrays,final):
+def plot(out,metrics,offsets,times,contributions,arrays,final):
     import matplotlib
     matplotlib.use('Agg')
     import matplotlib.pyplot as plt
@@ -121,12 +126,34 @@ def plot(out,metrics,offsets,times,arrays,final):
             r=[r for r in times if r['trial']==trial and r['step']==step and r['scope']=='training_sources' and r['group']==group];ax.plot([x['tick'] for x in r],[x['rmse'] for x in r],label=trial)
         ax.axvspan(41,49,alpha=.1,color='red');ax.set(title=group,xlabel='Future tick',ylabel='RMSE(rad)');ax.legend();ax.grid(alpha=.2)
     fig.suptitle(f'REAL training-source temporal errors; transfer Step{final}');fig.savefig(out/'group_temporal.png',dpi=170);plt.close(fig)
-    m,d2=arrays['B2',final];_,d0=arrays['B0',final];_,base=arrays['Step8000',8000];gt=base['truth'];e2=d2['prediction']-gt;e0=d0['prediction']-gt;train=np.array([w['training_source'] for w in m['windows']]);delta=np.mean(e2**2-e0**2,(1,2));chosen=[int(np.flatnonzero(train)[np.argmax(delta[train])]),int(np.flatnonzero(~train)[np.argmax(delta[~train])]),int(np.argmax(np.max(np.abs(e2),(1,2))))]
+    fig,axes=plt.subplots(1,3,figsize=(15,4),layout='constrained')
+    for ax,scope,title in zip(axes,scopes,titles):
+        for trial,step in [('Step8000',8000),('B0',final),('B2',final)]:
+            r=[r for r in times if r['trial']==trial and r['step']==step and r['scope']==scope and r['group']=='full_action']
+            ax.plot([x['tick'] for x in r],[x['rmse'] for x in r],label=trial)
+        ax.axvspan(41,49,alpha=.1,color='red');ax.set(title=title,xlabel='Future tick',ylabel='RMSE(rad)');ax.legend();ax.grid(alpha=.2)
+    fig.suptitle(f'REAL transfer Step{final} versus original baseline; final9 shaded');fig.savefig(out/'cohort_temporal.png',dpi=170);plt.close(fig)
+    fig,axes=plt.subplots(1,3,figsize=(15,4),layout='constrained')
+    for ax,scope,title in zip(axes,scopes,titles):
+        for pos,(trial,step) in enumerate([('Step8000',8000),('B0',final),('B2',final)]):
+            r=next(r for r in offsets if r['trial']==trial and r['step']==step and r['scope']==scope and r['group']=='full_action')
+            ax.bar(np.arange(2)+(pos-1)*.24,[r['offset_mse'],r['shape_mse']],width=.24,label=trial)
+        ax.set_xticks([0,1],['Offset','Centered shape']);ax.set(title=title,ylabel='Physical MSE(rad²)');ax.legend();ax.grid(axis='y',alpha=.2)
+    fig.suptitle(f'REAL transfer Step{final}: exact physical error decomposition');fig.savefig(out/'offset_shape.png',dpi=170);plt.close(fig)
+    fig,axes=plt.subplots(1,3,figsize=(15,4),layout='constrained')
+    for ax,scope,title in zip(axes,scopes,titles):
+        for trial,step in [('Step8000',8000),('B0',final),('B2',final)]:
+            r=sorted([r for r in contributions if r['trial']==trial and r['step']==step and r['scope']==scope and r['group']=='full_action'],key=lambda x:x['degree'])
+            ax.plot([x['degree'] for x in r],[x['component_rmse_rad'] for x in r],'o-',label=trial)
+        ax.set(title=title,xlabel='Legendre degree',ylabel='Decoded component RMSE(rad)');ax.legend();ax.grid(alpha=.2)
+    fig.suptitle('REAL weighted per-degree residuals; squared components are NOT additive');fig.savefig(out/'coefficient_components.png',dpi=170);plt.close(fig)
+    m,d2=arrays['B2',final];_,d0=arrays['B0',final];_,base=arrays['Step8000',8000];gt=base['truth'];e2=d2['prediction']-gt;e0=d0['prediction']-gt;train=np.array([w['training_source'] for w in m['windows']]);delta=np.mean(e2**2-e0**2,(1,2));zero=arrays['B2',0][1];ez=zero['prediction']-gt;vs_zero=np.mean(e2**2-ez**2,(1,2));chosen=[int(np.flatnonzero(train)[np.argmax(delta[train])]),int(np.flatnonzero(~train)[np.argmax(vs_zero[~train])]),int(np.argmax(np.max(np.abs(e2),(1,2))))]
     fig,axes=plt.subplots(1,3,figsize=(15,4),layout='constrained');cases=[]
-    for ax,i,label in zip(axes,chosen,['Worst training-window regression','Worst candidate-window regression','Largest B2 error']):
+    labels=['Worst training regression vs B0-FT' if delta[chosen[0]]>0 else 'Smallest training gain vs B0-FT', 'Worst candidate regression vs B2 Step0' if vs_zero[chosen[1]]>0 else 'Candidate unchanged or improved vs B2 Step0', 'Largest B2 error']
+    for ax,i,label in zip(axes,chosen,labels):
         tick,joint=np.unravel_index(np.abs(e2[i]).argmax(),e2[i].shape)
-        for val,name in [(gt,'GT'),(base['oracle'],'Oracle'),(base['prediction'],'Step8000'),(d0['prediction'],'B0-FT'),(d2['prediction'],'B2-FT')]:ax.plot(np.arange(50),val[i,:,joint],label=name)
-        w=m['windows'][i];ax.set(title=label+'\n'+ORDER[joint],xlabel='Prediction tick',ylabel='Absolute command(rad)');ax.legend(fontsize=8);cases.append({'selection':label,'window':i,'source':w['sample_id'],'row':w['current_row'],'joint':int(joint),'joint_name':ORDER[joint],'tick':int(tick),'B2_rmse':float(np.sqrt(np.mean(e2[i]**2))),'B0_rmse':float(np.sqrt(np.mean(e0[i]**2)))})
+        for val,name in [(gt,'GT'),(base['oracle'],'Oracle'),(base['prediction'],'Step8000'),(d0['prediction'],'B0-FT'),(zero['prediction'],'B2 Step0'),(d2['prediction'],'B2-FT')]:ax.plot(np.arange(50),val[i,:,joint],label=name)
+        w=m['windows'][i];ax.set(title=label+'\n'+ORDER[joint],xlabel='Prediction tick',ylabel='Absolute command(rad)');ax.legend(fontsize=8);cases.append({'selection':label,'window':i,'source':w['sample_id'],'row':w['current_row'],'joint':int(joint),'joint_name':ORDER[joint],'tick':int(tick),'B2_rmse':float(np.sqrt(np.mean(e2[i]**2))),'B0_rmse':float(np.sqrt(np.mean(e0[i]**2))),'B2_step0_rmse':float(np.sqrt(np.mean(ez[i]**2))),'mse_change_vs_B0':float(delta[i]),'mse_change_vs_B2_step0':float(vs_zero[i])})
     fig.suptitle(f'REAL transfer Step{final} post-hoc cases; no phase/FK/task-success inference');fig.savefig(out/'tail_cases.png',dpi=170);plt.close(fig);(out/'tail_cases.json').write_text(json.dumps(cases,indent=2)+'\n')
 
 
