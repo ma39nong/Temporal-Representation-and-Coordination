@@ -26,6 +26,10 @@ class Protocol(unittest.TestCase):
   with self.assertRaises(ValueError):validate_protocol(c)
 
 class Entrypoint(unittest.TestCase):
+ def test_pilot_spawn_import_has_no_training_side_effects(self):
+  script=Path(__file__).resolve().parents[1]/'scripts/run_p1_pilot_source.py'
+  namespace=runpy.run_path(str(script),run_name='__mp_main__')
+  self.assertTrue(callable(namespace['main']))
  def test_spawn_import_does_not_parse_args_or_start_training(self):
   # Spawn workers import __mp_main__; they must not rerun preflight/launch.
   script=Path(__file__).resolve().parents[1]/'scripts/prepare_p1_training_source.py'
