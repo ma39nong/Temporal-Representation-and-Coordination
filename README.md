@@ -1,6 +1,6 @@
 # Temporal Representation and Coordination
 
-**当前阶段（2026-11-07）：P1-3收益机制与退化案例分析完成，`NEED MORE EVIDENCE`（针对新的Action Expert机制）。** B2的Step500训练/候选MSE收益分别92.47%/98.65%来自整体偏移下降，但8个退化来源的偏移全部回退，左臂晚段与局部变化、训练极尾仍有退化。两个rejected候选已追溯为任务失败审核，数值读取合同通过，不能作为正式成功测试集。见[机制分析、来源统计与图表](docs/p1_3_mechanism_analysis.md)。[P1-2真实训练结果](docs/p1_2_pilot_training_results.md)的`B2 PROMISING`仍仅限500步均值/偏移诊断；本轮未训练或新增算法。P1-1的[复现证据](docs/p1_replay_parity.md)、[q0分析](docs/p1_reference_state_analysis.md)和[受控协议](docs/p1_small_budget_training_plan.md)保留追溯。
+**当前阶段（2026-11-07）：P1-4已核验并复用原FLASH FullFT Step8000，未启动训练。** 三个Checkpoint的模型、Adam状态和匹配统计均可读取；统一FP32重评4000/6000/8000，训练来源RMSE为0.014757→0.011712→0.009867rad，候选20窗为0.228748→0.228203→0.226701rad，候选偏移占MSE仍达98.84%。建议复用Step8000参数设计250步/组的同初始化B0/B2微调，不能将未拒绝或失败候选当作独立成功泛化结果。见[权重核验、真实指标与微调方案](docs/p1_4_fullft_reuse.md)。[P1-3机制分析](docs/p1_3_mechanism_analysis.md)和[P1-2配对训练](docs/p1_2_pilot_training_results.md)保留各自结论与比较边界；对新Expert架构仍需更多证据。P1-1的[复现证据](docs/p1_replay_parity.md)、[q0分析](docs/p1_reference_state_analysis.md)和[受控协议](docs/p1_small_budget_training_plan.md)保留追溯。
 
 面向双FR3＋双Sharpa（58D）、三路RGB和π₀.₅系统的独立研究工程。基础包提供NumPy离线数据/误差分析；可选原环境适配层保留原FLASH架构，只研究动作坐标。代码保存在本仓库，默认main开发；原训练工程、数据和已有权重只读，仅在用户明确授权范围内执行训练，不进行机器人控制。
 

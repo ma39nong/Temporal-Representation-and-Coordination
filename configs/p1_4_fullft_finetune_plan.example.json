@@ -1,0 +1,90 @@
+{
+  "status": "DESIGN_ONLY_NOT_LAUNCHED",
+  "enabled": false,
+  "question": "Incremental benefit of State-Relative adaptation from an Absolute FullFT checkpoint; not fresh FLASH learning",
+  "initializer": {
+    "params": "/path/to/verified_fullft_run/8000/params",
+    "step": 8000,
+    "parameter_sha256": "40b2c2c4dcdd6fb88dd847d5762d2071fba5028af0942c6dfe457409fe5f5919",
+    "strict_all_parameter_load": true,
+    "reset_projection_layers": false
+  },
+  "assets": {
+    "training_contract_sha256": "50e26190703b466987ee5a8db9879fb04b43a5e221d3c07df5bcf8121c80e1e8",
+    "normalization_sha256": "a5d7bd2dd422148736c69f1bf52a721d5770ba810f3bace9a2dd413395544d52",
+    "fixed_inputs_sha256": "ff5cca8e98da75d52d79bdd17e3ad6b2d102c527fb6842eee75a40d26735cd28"
+  },
+  "trials": {
+    "B0-Finetune": {
+      "coordinate_mode": "absolute"
+    },
+    "B2-Finetune": {
+      "coordinate_mode": "state_relative"
+    }
+  },
+  "shared": {
+    "optimizer_state_policy": "reset Adam moments and counters in BOTH trials; never restore Absolute moments in just B0",
+    "optimizer": {
+      "b1": 0.9,
+      "b2": 0.95,
+      "eps": 1e-08,
+      "weight_decay": 1e-10,
+      "clip_gradient_norm": 1.0
+    },
+    "initial_paired_optimizer_steps": 250,
+    "optional_later_budget": 500,
+    "automatic_extension": false,
+    "batch_size": 256,
+    "fsdp_devices": 8,
+    "train_dtype": "bfloat16",
+    "model_seed": 42,
+    "flow_seed": 42,
+    "augmentation_seed": 42002,
+    "data_seed": 42003,
+    "sampler_cursor": 0,
+    "lr_plan": {
+      "warmup_steps": 25,
+      "peak_lr": 2.5e-06,
+      "after_warmup": "constant until250",
+      "counter_origin": "reset0 in both"
+    },
+    "trainable_parameters": "FullFT, identical 3353487146 parameters",
+    "save_steps": [
+      0,
+      50,
+      100,
+      250
+    ],
+    "K": 6,
+    "coefficient_tokens": 7,
+    "history_ticks": [
+      -7,
+      0
+    ],
+    "target_ext_ticks": [
+      -2,
+      51
+    ],
+    "evaluate_ticks": [
+      0,
+      49
+    ]
+  },
+  "evaluation": {
+    "dtype": "float32",
+    "matmul_precision": "highest",
+    "batch_size": 1,
+    "num_steps": 1,
+    "padding": false,
+    "same_505_windows": true,
+    "candidate_success_status": "unverified; two sources explicitly reviewed failed",
+    "final_test": "new pre-registered independent verified-success recordings, not the reused20 exploratory windows"
+  },
+  "required_before_launch": [
+    "Explicit new training authorization",
+    "Dedicated warm-start loader/preflight: existing P1-2 launcher enforces pi05_base and must not be bypassed",
+    "Zero-update B0 parity with current Step8000 export; measure B2 Step0 coordinate-switch transient",
+    "Full parameter content hash equality; fresh Adam digest equality; trainable layout equality; sampler sequence hash equality",
+    "Short save/restore precheck counted inside both budgets; stop affected trial on OOM/NaN rather than change one configuration"
+  ]
+}
