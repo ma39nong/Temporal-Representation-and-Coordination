@@ -58,7 +58,10 @@ class LeRobotAdapter:
             if key in ('action', 'observation.state'):
                 rows = col.to_pylist()
                 try:
-                    result[key] = np.asarray(rows, dtype=col.type.value_type.to_pandas_dtype())
+                    # An empty child slice preserves the Arrow numeric dtype without
+                    # invoking the optional pandas type-conversion shim.
+                    dtype = col.values.slice(0, 0).to_numpy(zero_copy_only=False).dtype
+                    result[key] = np.asarray(rows, dtype=dtype)
                 except (AttributeError, TypeError, ValueError):
                     result[key] = np.asarray(rows, dtype=object)
             else:

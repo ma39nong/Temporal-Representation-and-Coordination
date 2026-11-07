@@ -148,6 +148,25 @@ class Contracts(unittest.TestCase):
             self.assertTrue(report['real_data_read'])  # actual file read, synthetic content
             self.assertEqual(report['observed_frames'], 55)
             self.assertEqual(report['episodes'][0]['complete_windows'], 6)
+            # Both list encodings must preserve source dtypes, including invalid
+            # action dtypes that the audit must detect rather than silently cast.
+            from trc.data.lerobot_adapter import LeRobotAdapter
+            for scalar_type, dtype in ((pa.float32(), np.float32), (pa.float64(), np.float64),
+                                       (pa.int32(), np.int32)):
+                for list_type in (pa.list_(scalar_type), pa.list_(scalar_type, 58)):
+                    with self.subTest(list_type=list_type):
+                        values = np.arange(55 * 58, dtype=dtype).reshape(55, 58)
+                        typed_table = table
+                        for key in ('action', 'observation.state'):
+                            typed_table = typed_table.set_column(
+                                typed_table.schema.get_field_index(key), key,
+                                pa.array(values.tolist(), type=list_type))
+                        pq.write_table(typed_table, root / 'data/chunk-000/episode_000000.parquet')
+                        loaded = LeRobotAdapter(root).read_episode(0)
+                        for key in ('action', 'observation.state'):
+                            self.assertEqual(loaded[key].dtype, np.dtype(dtype))
+                            np.testing.assert_array_equal(loaded[key], values)
+            pq.write_table(table, root / 'data/chunk-000/episode_000000.parquet')
             info['total_frames'] = 56
             (root / 'meta/info.json').write_text(json.dumps(info))
             self.assertEqual(audit_dataset({'dataset_root': temp, 'layout': 'canonical58'})['status'], 'failed')
