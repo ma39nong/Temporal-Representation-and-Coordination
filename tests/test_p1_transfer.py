@@ -29,5 +29,6 @@ class Transfer(unittest.TestCase):
         with self.assertRaises(ValueError):validate_transfer_protocol(c)
 
     def test_prepare_import_does_not_start_training(self):
-        ns=runpy.run_path(str(ROOT/'scripts/prepare_p1_transfer_source.py'),run_name='__mp_main__')
-        self.assertTrue(callable(ns['main']))
+        for name in ('prepare_p1_transfer_source.py','init_transfer_tracking_source.py'):
+            ns=runpy.run_path(str(ROOT/'scripts'/name),run_name='__mp_main__')
+            self.assertTrue(callable(ns['main']))

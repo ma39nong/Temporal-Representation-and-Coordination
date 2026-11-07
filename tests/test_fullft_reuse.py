@@ -11,7 +11,7 @@ ROOT=Path(__file__).resolve().parents[1]
 
 class FullftReuse(unittest.TestCase):
     def test_help_needs_no_original_runtime_or_gpu(self):
-        for name in ('audit_fullft_checkpoint_source.py','report_fullft_reuse.py'):
+        for name in ('audit_fullft_checkpoint_source.py','report_fullft_reuse.py','report_p1_transfer.py','check_transfer_step0.py'):
             r=subprocess.run([sys.executable,str(ROOT/'scripts'/name),'--help'],capture_output=True,text=True)
             self.assertEqual(r.returncode,0,r.stderr)
 
