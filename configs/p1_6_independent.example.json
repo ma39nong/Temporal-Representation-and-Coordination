@@ -1,0 +1,10 @@
+{
+  "collection_config": null,
+  "reviews_path": null,
+  "exclusion_registry_path": null,
+  "protocol": {
+    "windows_per_recording": 5,
+    "expected_camera_features": {},
+    "preprocessing_evidence_files": []
+  }
+}
