@@ -1,0 +1,49 @@
+{
+  "source_recording_id": null,
+  "original_recording_sha256": null,
+  "ancestor_recording_ids": [],
+  "task_outcome": null,
+  "complete_task": null,
+  "quality_passed": null,
+  "reviewer": null,
+  "reviewed_at": null,
+  "evidence_files": [],
+  "lineage_verified": null,
+  "checked_exclusion_sha256": null,
+  "initial_position_description": null,
+  "truss_configuration_description": null,
+  "dataset": {
+    "root": null,
+    "episode_index": null,
+    "layout": "converter58",
+    "fps_expected": 30
+  },
+  "scene": {
+    "reference_condition_id": null,
+    "comparison": "unverified",
+    "truss_id": null,
+    "fruit_count": null,
+    "geometry_description": null,
+    "object_and_basket_positions": null,
+    "occlusion_description": null,
+    "illumination": null,
+    "camera_rig_id": null,
+    "camera_calibration_evidence": [],
+    "scene_review_evidence": []
+  },
+  "capture": {
+    "batch_id": null,
+    "operator": null,
+    "raw_start_ns": null,
+    "raw_end_ns": null,
+    "matching_block_id": null,
+    "attempt_index": null
+  },
+  "state": {
+    "initial_state_58d_rad": null,
+    "frame_definition": "first exported valid frame; record raw-start mapping separately",
+    "coverage_class": "unverified",
+    "reference_sha256": null
+  },
+  "purpose": "UNFILLED REVIEW TEMPLATE, not an enrolled source; success and A/B/C/D cannot be inferred from directory or stage labels"
+}
