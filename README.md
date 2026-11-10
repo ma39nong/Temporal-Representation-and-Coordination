@@ -1,6 +1,8 @@
 # Temporal Representation and Coordination
 
-**当前阶段（2026-11-07）：P1-5同Step8000初始化的B0/B2各250步配对微调与8×505窗评价已完成，`MIXED RESULTS`。** B0/B2终点RMSE：训练来源0.007730/0.015527rad，未拒绝候选0.242875/0.062107rad，失败示范0.215549/0.068484rad。B2候选主收益在零更新切换时已出现；训练97来源均差于原模型与B0，左臂末9步和尾部仍有代价，不能宣称独立成功泛化或实机改善。见[实际迁移结果、Step0效应与三层对照](docs/p1_5_step8000_transfer_results.md)。[P1-4权重核验](docs/p1_4_fullft_reuse.md)、[P1-3机制分析](docs/p1_3_mechanism_analysis.md)和[P1-2基础权重配对训练](docs/p1_2_pilot_training_results.md)保留各自比较边界；不自动延长训练或开发新Expert。P1-1的[复现证据](docs/p1_replay_parity.md)、[q0分析](docs/p1_reference_state_analysis.md)和[受控协议](docs/p1_small_budget_training_plan.md)保留追溯。
+**当前阶段（2026-11-10）：P2-0条件参考选择可行性分析完成，`INSUFFICIENT EVIDENCE`。** 97训练来源/4开发来源的录制隔离验证中，最近邻状态规则将开发RMSE从0.196709降至0.154930 rad，但训练RMSE上升10.86%；端点优势几乎与数据集合身份重合，未训练门控、未修改Expert。此前6个P1-7测试来源未参与本轮数值分析，后续最终评价须另锁新录制。见[完整P2-0证据与计算成本](docs/p2_0_conditional_reference_feasibility.md)。
+
+历史P1-5：**2026-11-07：P1-5同Step8000初始化的B0/B2各250步配对微调与8×505窗评价已完成，`MIXED RESULTS`。** B0/B2终点RMSE：训练来源0.007730/0.015527rad，未拒绝候选0.242875/0.062107rad，失败示范0.215549/0.068484rad。B2候选主收益在零更新切换时已出现；训练97来源均差于原模型与B0，左臂末9步和尾部仍有代价，不能宣称独立成功泛化或实机改善。见[实际迁移结果、Step0效应与三层对照](docs/p1_5_step8000_transfer_results.md)。[P1-4权重核验](docs/p1_4_fullft_reuse.md)、[P1-3机制分析](docs/p1_3_mechanism_analysis.md)和[P1-2基础权重配对训练](docs/p1_2_pilot_training_results.md)保留各自比较边界；不自动延长训练或开发新Expert。P1-1的[复现证据](docs/p1_replay_parity.md)、[q0分析](docs/p1_reference_state_analysis.md)和[受控协议](docs/p1_small_budget_training_plan.md)保留追溯。
 
 面向双FR3＋双Sharpa（58D）、三路RGB和π₀.₅系统的独立研究工程。基础包提供NumPy离线数据/误差分析；可选原环境适配层保留原FLASH架构，只研究动作坐标。代码保存在本仓库，默认main开发；原训练工程、数据和已有权重只读，仅在用户明确授权范围内执行训练，不进行机器人控制。
 
