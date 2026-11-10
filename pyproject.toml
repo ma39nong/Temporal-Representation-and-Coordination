@@ -15,6 +15,7 @@ trc = "trc.cli:main"
 [project.optional-dependencies]
 parquet = ["pyarrow>=14"]
 analysis = ["pyarrow>=14", "matplotlib>=3.9"]
+review = ["pyarrow>=14", "av>=14", "Pillow>=10", "PyYAML>=6"]
 
 [tool.setuptools]
 license-files = ["third_party/openpi/LICENSE", "third_party/openpi/NOTICE.md"]
