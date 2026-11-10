@@ -55,7 +55,8 @@ class LeRobotAdapter:
         result = {}
         for key in columns:
             col = table[key].combine_chunks()
-            if key in ('action', 'observation.state'):
+            if key in ('action', 'observation.state') or (
+                    key in ('observation.arm_engaged', 'observation.engaged') and hasattr(col, 'values')):
                 rows = col.to_pylist()
                 try:
                     # An empty child slice preserves the Arrow numeric dtype without

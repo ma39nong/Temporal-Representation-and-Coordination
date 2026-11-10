@@ -13,6 +13,7 @@ import subprocess
 import sys
 import time
 import os
+import ast
 from dataclasses import replace
 sys.dont_write_bytecode=True
 import numpy as np
@@ -29,6 +30,18 @@ def inventory(root):
     return {str(p.relative_to(root)):[p.stat().st_size,p.stat().st_mtime_ns] for p in root.rglob('*') if p.is_file()}
 
 
+def model_kwargs_from_contract(text):
+    """Parse only saved literal dataclass fields; never execute a repr."""
+    node=ast.parse(text,mode='eval').body
+    if not isinstance(node,ast.Call) or not isinstance(node.func,ast.Name) or node.func.id not in ('Pi0FlashConfig','CoordinateFlashConfig') or node.args:
+        raise ValueError('Pinned FLASH model dataclass repr required')
+    if any(k.arg is None for k in node.keywords):raise ValueError('No expanded kwargs')
+    result={k.arg:ast.literal_eval(k.value) for k in node.keywords}
+    if len(result)!=len(node.keywords):raise ValueError('Duplicate model fields')
+    result.pop('coordinate_mode',None)
+    return result
+
+
 def main(config_path):
     import jax
     import jax.numpy as jnp
@@ -37,19 +50,37 @@ def main(config_path):
     from openpi.models.tokenizer import PaligemmaTokenizer
     from openpi.training.flash_native import NativeDataset,bind_stats,preflight
     from openpi.training.flash_checkpoint import parameter_digest,is_vlm_parameter
-    from scripts.run_training import load_experiment
     cfg=json.loads(Path(config_path).read_text());out=Path(cfg['output']).resolve()
     if out.is_relative_to(Path.cwd().resolve()) or out.exists():raise ValueError('New output outside original checkout required')
-    if subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()!=cfg['source_commit']:raise ValueError('Source commit mismatch')
-    if subprocess.check_output(['git','status','--porcelain','--untracked-files=no'],text=True).strip():raise ValueError('Dirty original source')
+    independent=cfg.get('evaluation_input_mode')=='independent_reviewed'
+    if independent:
+        snapshot=json.loads(Path(cfg['source_snapshot_manifest']).read_text())
+        if snapshot['commit']!=cfg['source_commit'] or sha(cfg['source_snapshot_manifest'])!=cfg['source_snapshot_manifest_sha256']:
+            raise ValueError('Pinned runtime snapshot mismatch')
+        root=Path.cwd().resolve()
+        for relative,expected in snapshot['files'].items():
+            path=(root/relative).resolve()
+            if not path.is_relative_to(root) or sha(path)!=expected:raise ValueError('Runtime source changed')
+        if sha(cfg['frozen_protocol'])!=cfg['frozen_protocol_sha256']:raise ValueError('Frozen independent protocol changed')
+    else:
+        if subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()!=cfg['source_commit']:raise ValueError('Source commit mismatch')
+        if subprocess.check_output(['git','status','--porcelain','--untracked-files=no'],text=True).strip():raise ValueError('Dirty original source')
     checkpoint=Path(cfg['checkpoint']);before=inventory(checkpoint)
     completion=json.loads((checkpoint/'_CHECKPOINT_METADATA').read_text())
     if not completion.get('commit_timestamp_nsecs') or not (checkpoint/'params/_METADATA').exists():raise ValueError('Incomplete checkpoint')
     if int(checkpoint.name)!=cfg['expected_step']:raise ValueError('Step mismatch')
     if sha(cfg['training_contract'])!=cfg['training_contract_sha256']:raise ValueError('Training contract pin mismatch')
     contract=json.loads(Path(cfg['training_contract']).read_text())
-    experiment=bind_stats(load_experiment(cfg['experiment_module']))
-    verified=preflight(experiment)
+    if independent:
+        from types import SimpleNamespace
+        from openpi.models.pi0_flash import Pi0FlashConfig
+        if sha(cfg['norm_stats_path'])!=contract['dataset']['normalization_sha256']:raise ValueError('Training statistics identity mismatch')
+        experiment=SimpleNamespace(model=Pi0FlashConfig(**model_kwargs_from_contract(contract['model'])),data=SimpleNamespace(extra_delta_transform=False))
+        verified=contract['dataset']
+    else:
+        from scripts.run_training import load_experiment
+        experiment=bind_stats(load_experiment(cfg['experiment_module']))
+        verified=preflight(experiment)
     training_model=experiment.model
     if 'coordinate_mode' in cfg:
         import site
@@ -72,11 +103,42 @@ def main(config_path):
         counts[group]+=1;elements[group]+=int(np.size(value))
     if not all(counts.values()):raise ValueError('Incomplete VLM/expert checkpoint')
     parameter_hash=parameter_digest(params)
+    if independent and parameter_hash!=cfg['expected_parameter_sha256']:raise ValueError('Frozen checkpoint parameter mismatch')
     model=inference_model.load(jax.device_put(params),remove_extra_params=False);model.eval();del params,flat
-    data=NativeDataset(experiment,tokenizer=PaligemmaTokenizer(max_len=experiment.model.max_token_len))
+    if independent:
+        from openpi.shared import normalize
+        import torch
+        torch.set_num_threads(1)  # Match NativeDataset.__init__ CPU resize policy.
+        # Only skip the training collection inventory. Reuse original window,
+        # read_numeric, image, resize_image, tokenization and observation methods.
+        data=NativeDataset.__new__(NativeDataset)
+        data.stats=normalize.load(Path(cfg['norm_stats_path']).parent)
+        data.manifest=json.loads(Path(cfg['training_manifest']).read_text())
+        data.tokenizer=PaligemmaTokenizer(max_len=experiment.model.max_token_len)
+    else:
+        data=NativeDataset(experiment,tokenizer=PaligemmaTokenizer(max_len=experiment.model.max_token_len))
     inputs=json.loads(Path(cfg['paired_inputs']).read_text())
     reference=np.load(cfg['reference_arrays'],allow_pickle=False)
     if sha(cfg['paired_inputs'])!=cfg['paired_inputs_sha256'] or sha(cfg['reference_arrays'])!=cfg['reference_arrays_sha256']:raise ValueError('Paired input pin mismatch')
+    if independent:
+        protocol=json.loads(Path(cfg['frozen_protocol']).read_text())
+        if cfg['paired_inputs_sha256']!=protocol['paired_inputs_sha256'] or cfg['reference_arrays_sha256']!=protocol['reference_arrays_sha256']:
+            raise ValueError('Inputs differ from preregistered windows')
+        chosen=protocol['models'][cfg['frozen_model_id']]
+        if chosen['parameter_sha256']!=parameter_hash or chosen['coordinate_mode']!=cfg['coordinate_mode']:
+            raise ValueError('Model differs from frozen protocol')
+        if sha(cfg['source_audit'])!=protocol['source_audit_sha256']:raise ValueError('Locked source audit changed')
+        audit=json.loads(Path(cfg['source_audit']).read_text())
+        formal_ids={w['id'] for w in inputs['windows']}
+        for r in inputs['records']:
+            if r['id'] not in formal_ids:continue
+            row=next(v for v in audit['sources'] if v['source_recording_id']==r['source_recording_id'])
+            if sha(r['path'])!=row['parquet_sha256']:raise ValueError('Remote numeric file differs from reviewed copy')
+            for video_key in ('observation.images.cam0','observation.images.cam1','observation.images.cam2'):
+                rel=r['info']['video_path'].format(episode_chunk=r['episode']//r['info']['chunks_size'],episode_index=r['episode'],video_key=video_key)
+                path=Path(r['root'])/rel
+                expected=next(v['sha256'] for v in audit['videos'] if Path(v['path']).parts[-5:]==path.parts[-5:])
+                if sha(path)!=expected:raise ValueError('Remote video differs from reviewed copy')
     # Reuse original NativeDataset.window/image/observation, extend only in-memory
     # records to include explicitly held-out sources. Current stats stay unchanged.
     data.records={r['id']:r for r in inputs['records']};data.numeric={}
@@ -104,6 +166,16 @@ def main(config_path):
     def oracle(m,target):
         c=m.polynomial.fit_target(m.normalize(target),boundary_constraint=m.boundary_constraint)
         return c,m.denormalize(m.polynomial.reconstruct(c))
+    replay_difference=None
+    if independent:
+        if sha(cfg['parity_reference'])!=protocol['parity_reference_sha256']:raise ValueError('Prior replay reference changed')
+        with np.load(cfg['parity_reference'],allow_pickle=False) as prior:
+            obs,h,t=data.observation(inputs['parity_window'])
+            np.testing.assert_array_equal(h[0],prior['history'])
+            np.testing.assert_array_equal(t[0,2:52],prior['truth'])
+            _,p,_=jax.block_until_ready(predict(model,obs,jnp.asarray(h)))
+            replay_difference=float(np.max(np.abs(np.asarray(p)[0]-prior[cfg['frozen_model_id']])))
+            if replay_difference>1e-5:raise ValueError('Prior-window FP32 replay exceeds 1e-5 rad')
     out.mkdir(parents=True);rows=[];values=[];times=[];max_api=0.;max_truth=0.;max_history=0.;future_test=False
     for i,w in enumerate(inputs['windows']):
         obs,history,target=data.observation(w)
@@ -129,9 +201,10 @@ def main(config_path):
             data.numeric[ident]=(actions,states,tasks);future_test=True
         values.append((target[0,2:52],o[0],p[0],cg[0],cp[0],history[0],data.numeric[w['id']][1][w['start']]))
         record=data.records[w['id']];seen=record['source_recording_id'] in train_sources
+        if independent and seen:raise ValueError('Independent source overlaps training')
         rows.append({'sample_id':w['id'],'current_row':w['start'],'current_frame':w['start'],'episode_index':record['episode'],
                      'source_recording_id':record['source_recording_id'],'source_path':record['path'],
-                     'training_source':seen,'scope':'training_source_diagnostic' if seen else 'candidate_unseen_source','fps':30})
+                     'training_source':seen,'scope':w.get('evaluation_role','training_source_diagnostic' if seen else 'candidate_unseen_source'),'fps':30})
         if (i+1)%25==0:print(json.dumps({'evaluated':i+1,'total':len(inputs['windows']),'forward_s':times[-1]}),flush=True)
     a,o,p,cg,cp,h,s=map(np.stack,zip(*values))
     if not all(np.isfinite(x).all() for x in (a,o,p,cg,cp,h,s)):raise ValueError('Nonfinite export')
@@ -139,7 +212,7 @@ def main(config_path):
              scale=np.asarray(model.polynomial.scale),basis=np.asarray(model.polynomial.basis_ext[2:52]),
              q01=np.asarray(model.action_q01),q99=np.asarray(model.action_q99),valid=np.ones(a.shape,bool))
     if inventory(checkpoint)!=before:raise ValueError('Checkpoint changed during evaluation')
-    meta={'data_kind':'real','inference_mode':'fresh_fullft_checkpoint_paired_raw_inputs','evaluation_scope':'mixed_485_training_source_20_candidate_unseen',
+    meta={'data_kind':'real','inference_mode':'fresh_fullft_checkpoint_paired_raw_inputs','evaluation_scope':cfg.get('evaluation_scope','mixed_485_training_source_20_candidate_unseen'),
           'checkpoint_id':str(checkpoint),'checkpoint_step':cfg['expected_step'],'checkpoint_parameter_sha256':parameter_hash,
           'checkpoint_files_unchanged':True,'checkpoint_completion':completion,'parameter_leaf_counts':counts,'parameter_elements':elements,
           'strict_load_remove_extra_params':False,'source_commit':cfg['source_commit'],'upstream_runtime_commit':cfg['source_commit'],
@@ -153,6 +226,7 @@ def main(config_path):
           'runtime':{'jax':jax.__version__,'numpy':np.__version__,'device':str(jax.devices()[0]),
                      'peak_bytes_in_use':int(jax.devices()[0].memory_stats()['peak_bytes_in_use'])},
           'median_forward_seconds_excluding_compile':float(np.median(times[1:]))}
+    if independent:meta.update(frozen_model_id=cfg['frozen_model_id'],frozen_protocol_sha256=cfg['frozen_protocol_sha256'],source_snapshot_manifest_sha256=cfg['source_snapshot_manifest_sha256'],prior_window_replay_max_rad=replay_difference,runtime_initialization='Only training inventory skipped; original NativeDataset observation methods unchanged')
     (out/'metadata.json').write_text(json.dumps(meta,indent=2)+'\n')
     (out/'experiment_config.json').write_text(json.dumps(cfg,indent=2)+'\n')
     (out/'seal.json').write_text(json.dumps({'aligned_sha256':sha(out/'aligned.npz'),'metadata_sha256':sha(out/'metadata.json'),

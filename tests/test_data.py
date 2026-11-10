@@ -171,5 +171,25 @@ class Contracts(unittest.TestCase):
             (root / 'meta/info.json').write_text(json.dumps(info))
             self.assertEqual(audit_dataset({'dataset_root': temp, 'layout': 'canonical58'})['status'], 'failed')
 
+    def test_optional_vector_engagement_fields(self):
+        try:
+            import pyarrow as pa
+            import pyarrow.parquet as pq
+        except ImportError:
+            self.skipTest('optional pyarrow not installed')
+        from helpers import dataset
+        from trc.data.lerobot_adapter import LeRobotAdapter
+        with tempfile.TemporaryDirectory() as temp:
+            root=dataset(Path(temp)/'dataset',episodes=1)
+            path=root/'data/chunk-000/episode_000000.parquet';table=pq.read_table(path)
+            table=table.append_column('observation.arm_engaged',pa.array([[1.,0.]]*55,type=pa.list_(pa.float32(),2)))
+            table=table.append_column('observation.engaged',pa.array([[True,False]]*55,type=pa.list_(pa.bool_())))
+            pq.write_table(table,path);data=LeRobotAdapter(root).read_episode(0)
+            self.assertEqual(data['observation.arm_engaged'].shape,(55,2))
+            report=self.audit(data)
+            self.assertFalse(report['errors'])
+            self.assertEqual(report['observation.arm_engaged_inactive_rows'],55)
+            self.assertEqual(report['observation.engaged_inactive_rows'],55)
+
 
 if __name__ == '__main__': unittest.main()
