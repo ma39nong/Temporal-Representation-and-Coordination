@@ -1,0 +1,97 @@
+{
+  "status": "IMPLEMENTED_CPU_SMOKE_TESTED_GPU_PILOT_BLOCKED",
+  "trials": {
+    "B0": {
+      "mode": "none",
+      "updates": 0
+    },
+    "B1": {
+      "mode": "none",
+      "updates": 250
+    },
+    "B2": {
+      "mode": "unified",
+      "updates": 250
+    },
+    "B3": {
+      "mode": "order_specific",
+      "updates": 250
+    }
+  },
+  "representation": {
+    "coordinate": "absolute",
+    "horizon": 50,
+    "action_dim": 58,
+    "degree": 6,
+    "tokens": 7,
+    "num_flow_steps": 1
+  },
+  "initialization": {
+    "parameter_sha256": "40b2c2c4dcdd6fb88dd847d5762d2071fba5028af0942c6dfe457409fe5f5919",
+    "source_commit": "d208d414efbb78483f44bfef4c2a9314115dd632",
+    "adapter_seed": 42003,
+    "adapter_up": "zeros",
+    "adapter_down": "nonzero_fixed_seed_random"
+  },
+  "added_parameters": {
+    "B0": 0,
+    "B1": 0,
+    "B2": 11902,
+    "B3": 11440
+  },
+  "shared": {
+    "batch_size": 256,
+    "devices": 8,
+    "freeze_vlm": true,
+    "preserve_frozen_parameter_dtype": true,
+    "train_dtype": "bfloat16",
+    "optimizer_state_policy": "reset_all_trainable_groups",
+    "model_seed": 42,
+    "data_seed": 42001,
+    "augmentation_seed": 42002,
+    "flow_seed": 42,
+    "optimizer": {
+      "b1": 0.9,
+      "b2": 0.95,
+      "eps": 1e-08,
+      "weight_decay": 1e-10,
+      "clip_gradient_norm": 1.0
+    },
+    "schedule": {
+      "warmup_steps": 25,
+      "peak_lr": 2.5e-06,
+      "decay_steps": 250,
+      "decay_lr": 2.5e-06
+    },
+    "checkpoints": [
+      0,
+      5,
+      50,
+      100,
+      250
+    ]
+  },
+  "evaluation": {
+    "dtype": "float32",
+    "matmul_precision": "highest",
+    "batch_size": 1,
+    "padding": false,
+    "scope": "training-source diagnosis, filtered to common original continuous support"
+  },
+  "data": {
+    "source_count": 480,
+    "frames": 451270,
+    "legal_windows": 362918,
+    "cut_manifest_sha256": "517a53b3bcb94e460118504108da9bd63dbb14d44deb26c9d21e487a7d6a0021",
+    "normalization_sha256": "a5d7bd2dd422148736c69f1bf52a721d5770ba810f3bace9a2dd413395544d52",
+    "original_training_manifest_sha256": "d27dd1d976f8766d096658f97c415a98e42576b4604e93c4845bd4e5b42368c2",
+    "training_manifest_file_sha256": "747219a67ace4abf12eee6d22e200904097e1c8bf0fb7335bcb4dafd24969220",
+    "evaluation_indices_file_sha256": "f852e38042213b86762466dacf6be76f0908070d20ff549290a6d68a332c8489"
+  },
+  "execution_gate": {
+    "gpu_allocation_must_be_free": true,
+    "gpu_smoke_required": true,
+    "auto_resume_or_launch_later": false,
+    "paths_must_be_supplied_by_private_config": true
+  }
+}

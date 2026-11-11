@@ -1,5 +1,7 @@
 # Temporal Representation and Coordination
 
+**P2-2（2026-11-11）：读出Adapter已实现，CPU真实Smoke通过，8卡250步实验资源阻塞。** VLM冻结；普通Expert微调、统一rank11（11902新增参数）和分阶rank8（11440）均通过原生FP32一致性、完整Expert梯度及各5步CPU功能训练/恢复。当前无250步算法结果；统一使用362918个连续训练窗口，固定训练诊断窗更正为423个。见[结构、逐阶证据、实际验收及未完成项](docs/p2_2_order_specific_velocity_readout.md)。
+
 **最新进展（2026-11-11）：12项高误差条目已逐项核对来源、动作对齐、清洗映射及视频抽帧。** 其中6项（3个独立窗口）跨删除边界；3个有效左臂来源仍有明显远期预测偏离。选定第一个最小网络实验为按Legendre阶次的低秩速度读出，保留Absolute/K6/7 Token/Step8000，尚未实现或训练新Expert。见[证据、正常对照与具体修改方案](docs/p2_action_expert_mechanism_selection.md)。判定`READY FOR MINIMAL EXPERT IMPLEMENTATION`，不代表方法已有效。
 
 **当前执行重点（2026-11-11）：回到all480单颗基本技能，保留连续采摘作为技能复用与数量/结束研究。** 已复用Step8000的97个训练来源、485个真实窗口生成12项高误差审核案例；全动作RMSE复现为0.009867 rad，偏移/形状MSE约52%/48%。本轮无新训练或模型前向。任务身份、已有结论的任务变化限制、实际产物与后续通过条件见[当前研究执行记录](docs/research_execution_focus.md)。下列P2-1A等为历史阶段记录，候选审核不再是唯一研究推进路径。
