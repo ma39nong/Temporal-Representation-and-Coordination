@@ -35,3 +35,18 @@ def inverse_compact_time(compact_ns,mapping):
 def coverage_cell(success_status,data_status,lineage_status,training_isolation,prior_use,state_class,scene_class,task_type):
     if (success_status,data_status,lineage_status,training_isolation,prior_use,task_type)!=('success','verified','verified','verified','verified','single_pick'):return None
     return {('near','near'):'A',('near','different'):'B',('far','near'):'C',('far','different'):'D'}.get((state_class,scene_class))
+
+
+def flash_window_cuts(current, cuts):
+    """Cuts inside inclusive FLASH history/extended target [-7,+51].
+
+    A cut denotes the first row on the right segment. Starting at a cut is
+    valid; ending at a cut crosses it. This checks continuity, not bounds.
+    """
+    if not isinstance(current, (int, np.integer)) or isinstance(current, (bool, np.bool_)):
+        raise ValueError('Integer current frame required')
+    if any(not isinstance(c, (int, np.integer)) or isinstance(c, (bool, np.bool_)) for c in cuts):
+        raise ValueError('Integer cut rows required')
+    if list(cuts) != sorted(set(cuts)):
+        raise ValueError('Sorted distinct cut rows required')
+    return [int(c) for c in cuts if current - 7 < c <= current + 51]

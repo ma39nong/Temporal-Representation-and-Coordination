@@ -1,5 +1,7 @@
 # Temporal Representation and Coordination
 
+**最新进展（2026-11-11）：12项高误差条目已逐项核对来源、动作对齐、清洗映射及视频抽帧。** 其中6项（3个独立窗口）跨删除边界；3个有效左臂来源仍有明显远期预测偏离。选定第一个最小网络实验为按Legendre阶次的低秩速度读出，保留Absolute/K6/7 Token/Step8000，尚未实现或训练新Expert。见[证据、正常对照与具体修改方案](docs/p2_action_expert_mechanism_selection.md)。判定`READY FOR MINIMAL EXPERT IMPLEMENTATION`，不代表方法已有效。
+
 **当前执行重点（2026-11-11）：回到all480单颗基本技能，保留连续采摘作为技能复用与数量/结束研究。** 已复用Step8000的97个训练来源、485个真实窗口生成12项高误差审核案例；全动作RMSE复现为0.009867 rad，偏移/形状MSE约52%/48%。本轮无新训练或模型前向。任务身份、已有结论的任务变化限制、实际产物与后续通过条件见[当前研究执行记录](docs/research_execution_focus.md)。下列P2-1A等为历史阶段记录，候选审核不再是唯一研究推进路径。
 
 **历史阶段（2026-11-10）：P2-1A完成90个候选的实际技术资格复核，`BLOCKED BY REVIEW/DATA`。** 90条谱系/训练隔离/最低数值与时间轴合同通过；冻结状态2 near、3 far、85 ambiguous，完整任务及场景仍待人工审核，A–D合格均0。已提供90条审核卡与270路本地视频、7组训练场景参考；记录633个清洗拼接边界，后续窗口须限制在有效片段内。见[实际资格报告与优先5条审核](docs/p2_1a_recording_qualification.md)及[90条审核状态](configs/p2_1a_recording_review.json)。未训练或运行D0/D3新对比。

@@ -1,0 +1,16 @@
+{
+  "export": "../outputs/p1_4_fullft/export_step8000",
+  "cases": "../outputs/single_pick_review/review_cases.json",
+  "manifest": "../outputs/p1_7_independent/training_manifest.json",
+  "output": "../outputs/action_expert_cases",
+  "remote_proofs": "../outputs/action_expert_cases/remote_proofs.json",
+  "raw_bag_inventory": "../outputs/action_expert_cases/raw_bag_availability.json",
+  "legacy_proof_root": "/path/to/archived/full-source/conversion/records",
+  "roots": {
+    "10.16before": "/path/to/legacy/normal",
+    "1022_121_430_normal_lerobot": "/path/to/A121_430/input-snapshot",
+    "1022_130_423_normal_lerobot": "/path/to/B130_423/input-snapshot",
+    "1022_56_106_normal_lerobot": "/path/to/B56_106/normal"
+  },
+  "render_media": true
+}
