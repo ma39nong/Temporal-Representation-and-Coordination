@@ -1,0 +1,5 @@
+{
+  "export": "../outputs/p1_4_fullft/export_step8000",
+  "training_manifest": "../outputs/p1_7_independent/training_manifest.json",
+  "output": "../outputs/single_pick_review"
+}
