@@ -126,9 +126,8 @@ def main():
     np.testing.assert_array_equal(np.asarray(modelcfg.action_q01),data.stats['actions'].q01)
     np.testing.assert_array_equal(np.asarray(modelcfg.action_q99),data.stats['actions'].q99)
     data.validation=[]
-    sample_hash=hashlib.sha256()
-    for i in range(250*256):
-        sample_hash.update(json.dumps(data.index(i),sort_keys=True).encode()+b'\n')
+    # P2-2 sealed the JSON array, including its brackets/separators, not JSONL.
+    sample_hash=hashlib.sha256(json.dumps([data.index(i) for i in range(250*256)],sort_keys=True).encode())
     if sample_hash.hexdigest()!=cfg['sampler_sha256']:
         raise ValueError('Actual native sampler order changed')
 
