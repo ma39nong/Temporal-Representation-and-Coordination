@@ -123,6 +123,8 @@ def main():
     data.safe_index=ContinuousFlashIndex(data.train,json.loads(Path(cfg['cuts']).read_text()),shared['data_seed'])
     data.ends=np.asarray(data.safe_index.ends); data.numeric={};data.permutation=None;data.epoch=None
     data.stats=normalize.load(Path(cfg['norm_stats']).parent);data.tokenizer=None
+    np.testing.assert_array_equal(np.asarray(modelcfg.action_q01),data.stats['actions'].q01)
+    np.testing.assert_array_equal(np.asarray(modelcfg.action_q99),data.stats['actions'].q99)
     data.validation=[]
     sample_hash=hashlib.sha256()
     for i in range(250*256):
@@ -173,8 +175,9 @@ def main():
                 source=m.polynomial.fit_history(m.normalize(h))
                 velocity=m.coefficient_velocity(source,jnp.zeros((h.shape[0],),jnp.float32),mask,cache)
                 return velocity,m.denormalize(m.polynomial.reconstruct(source+velocity))
-            nv,na=jax.device_get(infer(native,obs,jnp.asarray(hist)))
-            ev,ea=jax.device_get(infer(extended,obs,jnp.asarray(hist)))
+            with jax.default_matmul_precision('highest'):
+                nv,na=jax.device_get(infer(native,obs,jnp.asarray(hist)))
+                ev,ea=jax.device_get(infer(extended,obs,jnp.asarray(hist)))
             differences=dict(velocity=float(np.max(np.abs(nv-ev))),physical_rad=float(np.max(np.abs(na-ea))))
             if max(differences.values())>1e-5:
                 raise ValueError('FP32 Step0 zero-residual parity failed')
