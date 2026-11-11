@@ -1,6 +1,6 @@
 # Temporal Representation and Coordination
 
-**P2-2（2026-11-11）：读出Adapter已实现，CPU真实Smoke通过，8卡250步实验资源阻塞。** VLM冻结；普通Expert微调、统一rank11（11902新增参数）和分阶rank8（11440）均通过原生FP32一致性、完整Expert梯度及各5步CPU功能训练/恢复。当前无250步算法结果；统一使用362918个连续训练窗口，固定训练诊断窗更正为423个。见[结构、逐阶证据、实际验收及未完成项](docs/p2_2_order_specific_velocity_readout.md)。
+**P2-3（2026-11-11）：公平性核验完成，8卡训练仍受资源阻塞。** 已核验B1/B2/B3实际Expert及Adam集合、462个新增参数差异，以及480条原单颗录制的窗口差额（60512个全部因跨清洗切口排除）。Step8000完整保留快照及统计重新通过SHA检查，128项测试通过；尚无BF16多卡预检和250步效果结果。见[公平性证据、资源与评价口径](docs/p2_3_velocity_adapter_experiment.md)。
 
 **最新进展（2026-11-11）：12项高误差条目已逐项核对来源、动作对齐、清洗映射及视频抽帧。** 其中6项（3个独立窗口）跨删除边界；3个有效左臂来源仍有明显远期预测偏离。选定第一个最小网络实验为按Legendre阶次的低秩速度读出，保留Absolute/K6/7 Token/Step8000，尚未实现或训练新Expert。见[证据、正常对照与具体修改方案](docs/p2_action_expert_mechanism_selection.md)。判定`READY FOR MINIMAL EXPERT IMPLEMENTATION`，不代表方法已有效。
 
