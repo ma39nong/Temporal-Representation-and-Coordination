@@ -24,6 +24,7 @@ def main():
     p.add_argument('--continuous-indices',required=True,type=Path)
     p.add_argument('--cases',required=True,type=Path)
     p.add_argument('--output',required=True,type=Path)
+    p.add_argument('--training-records',type=Path)
     args=p.parse_args();args.output.mkdir(parents=True,exist_ok=True)
     continuous=set(json.loads(args.continuous_indices.read_text())['indices'])
     cases=json.loads(args.cases.read_text())['entries']
@@ -37,7 +38,7 @@ def main():
         meta=json.loads((root/'metadata.json').read_text())
         if trial=='B0':
             indices=[i for i,w in enumerate(meta['windows']) if w['training_source']]
-            windows=[dict(meta['windows'][i],original_export_index=i) for i in indices]
+            windows=[dict(meta['windows'][i],original_export_index=i,continuous_support=i in continuous) for i in indices]
         else:
             indices=list(range(len(meta['windows'])));windows=meta['windows']
         if len(indices)!=485:raise ValueError('Require frozen legacy 485 windows')
@@ -170,6 +171,33 @@ def main():
     axes[-1].legend(fontsize=8)
     fig.suptitle('REAL predeclared three training-source cases; shaded last nine ticks')
     fig.tight_layout();fig.savefig(args.output/'focus_left_joint7.png',dpi=160);plt.close(fig)
+    if args.training_records:
+        records=json.loads(args.training_records.read_text());stats={}
+        fig,axes=plt.subplots(1,2,figsize=(12,4))
+        base=np.asarray([r['loss'] for r in records['B1']])
+        for trial,rows in records.items():
+            if [r['step'] for r in rows]!=list(range(1,251)):
+                raise ValueError('Training records must contain exactly accepted updates 1..250')
+            if any(r['vision_gradient_norm'] or r['language_gradient_norm'] for r in rows):
+                raise ValueError('Unexpected frozen VLM gradient')
+            steady=[r for r in rows if r['step'] not in (1,6)]
+            stats[trial]=dict(updates=250,effective_samples=rows[-1]['effective_samples'],
+                median_update_seconds=float(np.median([r['seconds'] for r in steady])),
+                median_samples_per_second_with_data=float(np.median([256/(r['seconds']+r['data_wait_seconds']) for r in steady])),
+                resume_peak_device_bytes=max(max(r['peak_device_bytes']) for r in rows[5:]),
+                initialization_and_smoke_peak_device_bytes=max(max(r['peak_device_bytes']) for r in rows[:5]),
+                first20_mean_loss=float(np.mean([r['loss'] for r in rows[:20]])),
+                last20_mean_loss=float(np.mean([r['loss'] for r in rows[-20:]])),
+                throughput_scope='steady compute + data wait; excludes initialization, compile, checkpoint IO')
+            values=np.asarray([r['loss'] for r in rows]);kernel=np.ones(20)/20
+            axes[0].plot(np.arange(20,251),np.convolve(values,kernel,mode='valid'),label=trial)
+            if trial!='B1':axes[1].plot(np.arange(20,251),np.convolve(values-base,kernel,mode='valid'),label=trial+' minus B1')
+        axes[0].set(xlabel='Optimizer update',ylabel='FM + consistency loss, 20-step mean')
+        axes[1].axhline(0,color='gray',ls='--');axes[1].set(xlabel='Optimizer update',ylabel='Paired loss difference, 20-step mean')
+        for ax in axes:ax.legend()
+        fig.suptitle('REAL same-window/same-key training; absolute loss curves nearly overlap')
+        fig.tight_layout();fig.savefig(args.output/'training_loss.png',dpi=160);plt.close(fig)
+        (args.output/'training_summary.json').write_text(json.dumps(stats,indent=2))
     print(json.dumps([r for r in totals if r['scope']=='continuous423'],indent=2))
 
 

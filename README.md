@@ -1,6 +1,6 @@
 # Temporal Representation and Coordination
 
-**P2-3（2026-11-11）：公平性核验完成，8卡训练仍受资源阻塞。** 已核验B1/B2/B3实际Expert及Adam集合、462个新增参数差异，以及480条原单颗录制的窗口差额（60512个全部因跨清洗切口排除）。Step8000完整保留快照及统计重新通过SHA检查，128项测试通过；尚无BF16多卡预检和250步效果结果。见[公平性证据、资源与评价口径](docs/p2_3_velocity_adapter_experiment.md)。
+**P2-3已完成：三组各250步，12个Checkpoint真实配对评价完成。** 原480条单颗录制、冻结VLM和同一采样/优化器协议；131项测试及8卡BF16保存恢复通过。423连续窗RMSE：B1=0.008368、B2=0.008366、B3=0.008363 rad。B3仅有极小平均优势，左臂末9步与Max未超过B1，暂不扩大分阶模块；无独立泛化结论。见[完整结果、来源与逐阶统计](docs/p2_3_velocity_adapter_experiment.md)。
 
 **最新进展（2026-11-11）：12项高误差条目已逐项核对来源、动作对齐、清洗映射及视频抽帧。** 其中6项（3个独立窗口）跨删除边界；3个有效左臂来源仍有明显远期预测偏离。选定第一个最小网络实验为按Legendre阶次的低秩速度读出，保留Absolute/K6/7 Token/Step8000，尚未实现或训练新Expert。见[证据、正常对照与具体修改方案](docs/p2_action_expert_mechanism_selection.md)。判定`READY FOR MINIMAL EXPERT IMPLEMENTATION`，不代表方法已有效。
 
