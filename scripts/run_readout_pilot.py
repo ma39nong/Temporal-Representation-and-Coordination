@@ -9,6 +9,7 @@ from dataclasses import replace
 import functools
 import hashlib
 import json
+import os
 from pathlib import Path
 import time
 from types import SimpleNamespace
@@ -41,12 +42,20 @@ def state_digest(tree):
     return h.hexdigest()
 
 
+def validate_runtime_environment(config):
+    for key,value in config['runtime_environment'].items():
+        if os.environ.get(key) != value:
+            raise ValueError('Use the sealed shared runtime launcher environment: '+key)
+
+
 def main():
     p = argparse.ArgumentParser()
     p.add_argument('--config', type=Path, required=True)
     p.add_argument('--trial', choices=['B1','B2','B3'], required=True)
     p.add_argument('--phase', choices=['precheck','resume'], required=True)
     args = p.parse_args()
+    cfg = json.loads(args.config.read_text())
+    validate_runtime_environment(cfg)
     import jax
     import jax.numpy as jnp
     import numpy as np
@@ -66,7 +75,6 @@ def main():
     from trc.models.flash_order_readout import ReadoutFlashConfig
     from trc.experiments.p2_protocol import validate_order_protocol
 
-    cfg = json.loads(args.config.read_text())
     protocol = json.loads(Path(cfg['protocol']).read_text())
     protocol_identity = validate_order_protocol(protocol)
     if jax.default_backend() != 'gpu' or jax.device_count() != 8:

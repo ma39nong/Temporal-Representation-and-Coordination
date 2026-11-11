@@ -3,6 +3,7 @@ import importlib.util
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
 spec=importlib.util.spec_from_file_location('readout_pilot',Path(__file__).parents[1]/'scripts/run_readout_pilot.py')
 runner=importlib.util.module_from_spec(spec)
@@ -10,6 +11,13 @@ spec.loader.exec_module(runner)
 
 
 class ReadoutPilotSourceTests(unittest.TestCase):
+    def test_runtime_launcher_cannot_silently_omit_nccl(self):
+        config={'runtime_environment':{'LD_PRELOAD':'/explicit/shared/libnccl.so.2'}}
+        with patch.dict('os.environ',{},clear=True):
+            with self.assertRaises(ValueError):runner.validate_runtime_environment(config)
+        with patch.dict('os.environ',config['runtime_environment'],clear=True):
+            runner.validate_runtime_environment(config)
+
     def test_only_sealed_step_is_loaded_without_main_side_effects(self):
         with tempfile.TemporaryDirectory() as directory:
             path=Path(directory)/'source.py'
