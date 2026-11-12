@@ -109,3 +109,5 @@ P0-C（2026-11-05）：真实FullFT Step4000/6000已分别在固定505窗上完�
 P1-0：已完成[物理偏移分解](docs/p1_offset_decomposition.md)、[状态相对坐标假设与真实Batch检查](docs/p1_state_relative_hypothesis.md)和[B0/B1/B2受控协议](docs/p1_controlled_experiment.md)。候选来源的整体偏移假设得到描述性支持；无参数坐标适配器已实现，B2尚未训练。基线跨执行图/进程的数值复现问题仍需闭合，当前不建议直接启动正式FullFT。
 
 P1-1（2026-11-06）：[数值复现已闭合](docs/p1_replay_parity.md)，后续B0/B2共享FP32/highest评价；[q0首步残差与时移诊断](docs/p1_reference_state_analysis.md)保留真实命令—反馈差异；[配对500步训练准备](docs/p1_small_budget_training_plan.md)通过CPU gate，默认入口只做preflight。本轮未训练。状态：`P1 SMALL-BUDGET TRAINING READY`，不代表B2有效或最终论文验证完成。
+
+P2-4（2026-11-12）：复用FLASH已有语言前缀，实现零新增参数的目标/因果进度接口，关闭路径FP32逐元素复现、真实Batch前后向及Head/条件恢复通过。两条成功开发录制仍缺目标数量及逐颗确认事件，不能启动可信目标条件训练；严格256 Token检查拒绝超限输入。见[目标与进度研究报告](docs/p2_4_goal_progress_flash.md)。没有继续扩展分阶Adapter或启动训练。
