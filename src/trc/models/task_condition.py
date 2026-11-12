@@ -50,7 +50,7 @@ class ConfirmedEvent:
 @dataclass(frozen=True)
 class TaskCondition:
     task_goal: str
-    target_count: int
+    target_count: int | None
     completed_count: int | None
     progress_valid: bool
     current_phase: str | None
@@ -59,9 +59,12 @@ class TaskCondition:
     evidence: tuple[str, ...] = ()
 
     def __post_init__(self):
-        _time(self.observation_time); _count(self.target_count, True)
-        if self.task_goal != 'pick_tomatoes':
+        _time(self.observation_time)
+        if self.target_count is not None: _count(self.target_count, True)
+        if self.task_goal not in ('pick_tomatoes', 'harvest_all'):
             raise ValueError('Only the reviewed tomato task vocabulary is supported')
+        if self.task_goal == 'harvest_all' and self.target_count is not None:
+            raise ValueError('Harvest-all does not imply a known numeric target')
         if type(self.progress_valid) is not bool or type(self.terminate_request) is not bool:
             raise ValueError('Boolean flags required')
         if self.progress_valid:
@@ -72,8 +75,13 @@ class TaskCondition:
         if self.current_phase is not None and self.current_phase not in PHASES:
             raise ValueError('Unknown phase')
 
+    @property
+    def remaining_count(self):
+        if self.target_count is None or not self.progress_valid: return None
+        return max(0, self.target_count-self.completed_count)
 
-def causal_condition(*, target_count, observation_time, events=(), reset_at=None,
+
+def causal_condition(*, target_count, observation_time, task_goal='pick_tomatoes', events=(), reset_at=None,
                      reset_evidence=None, coverage_until=None, terminate_request=False):
     """Count unique successful objects only with a complete confirmed event stream.
 
@@ -93,14 +101,14 @@ def causal_condition(*, target_count, observation_time, events=(), reset_at=None
     valid = (reset_at is not None and reset_at <= observation_time and bool(reset_evidence)
              and coverage_until is not None and coverage_until >= observation_time)
     if not valid:
-        return TaskCondition('pick_tomatoes', target_count, None, False, None,
+        return TaskCondition(task_goal, target_count, None, False, None,
                              terminate_request, observation_time)
     visible = sorted((e for e in events if reset_at <= e.occurred_at <= observation_time
                       and e.available_at <= observation_time), key=lambda e: (e.available_at, e.event_id))
     objects = {e.object_id for e in visible if e.kind == 'pick_success'}
     phases = [e.phase for e in sorted(visible, key=lambda e: (e.occurred_at, e.event_id))
               if e.kind == 'phase']
-    return TaskCondition('pick_tomatoes', target_count, len(objects), True,
+    return TaskCondition(task_goal, target_count, len(objects), True,
                          phases[-1] if phases else None, terminate_request, observation_time,
                          (reset_evidence, *(e.evidence for e in visible)))
 
@@ -108,10 +116,13 @@ def causal_condition(*, target_count, observation_time, events=(), reset_at=None
 def controller_request(condition):
     """Decision only. A stop request needs a separate validated safe controller."""
     return 'request_stop' if (condition.terminate_request or
-        (condition.progress_valid and condition.completed_count >= condition.target_count)) else 'continue_or_review'
+        (condition.progress_valid and condition.target_count is not None and condition.completed_count >= condition.target_count)) else 'continue_or_review'
 
 
 def task_prompt(condition, mode):
+    if mode == 'compact_v1': return compact_prompt(condition)
+    if condition.task_goal != 'pick_tomatoes' or condition.target_count is None:
+        raise ValueError('Harvest-all/unknown target requires the versioned compact_v1 protocol')
     if mode not in ('language_goal', 'explicit_goal', 'goal_progress'):
         raise ValueError('Unknown condition mode')
     # These are language variants of the SAME existing prefix channel.
@@ -156,3 +167,37 @@ def condition_observation(observation, conditions=(), *, mode='disabled', encode
     pairs = [checked_tokens(task_prompt(c, mode), s, encode, max_len) for c,s in zip(conditions, states)]
     return replace(observation, tokenized_prompt=np.stack([p[0] for p in pairs]),
                    tokenized_prompt_mask=np.stack([p[1] for p in pairs]))
+
+
+COMPACT_TEMPLATE_VERSION = 'truss-progress-v1'
+PHASE_CODES = {None: '?', 'pickup': 'p', 'harvest': 'h', 'return': 'r', 'adjust': 'a'}
+
+
+def compact_prompt(condition):
+    """Lossless typed task macro, NOT a claim that Step8000 learned its grammar.
+
+    Fixed macro: right hand manipulates/holds truss; left picks into LEFT basket.
+    harvest_all additionally requires returning empty stem. Fields are target /
+    confirmed count, then phase+terminate bit. '*' means all, '?' means unknown.
+    Current pilot admits single-digit counts; larger values explicitly fail.
+    Same serializer must be called by training, validation and inference.
+    """
+    for value in (condition.target_count, condition.completed_count):
+        if value is not None and value > 9:
+            raise ValueError('compact_v1 pilot count domain is 0..9; no truncation')
+    target = '*' if condition.task_goal == 'harvest_all' else (
+        '?' if condition.target_count is None else str(condition.target_count))
+    count = '?' if not condition.progress_valid else str(condition.completed_count)
+    return f'Right truss left pick basket {target}/{count} {PHASE_CODES[condition.current_phase]}{int(condition.terminate_request)}'
+
+
+def parse_compact_prompt(text, *, observation_time, evidence=()):
+    """Decode metadata to check that shortening did not silently lose any field."""
+    import re
+    match = re.fullmatch(r'Right truss left pick basket ([1-9*?])/([0-9?]) ([?phra])([01])', text)
+    if match is None: raise ValueError('Unknown compact task grammar')
+    target,count,phase,stop=match.groups()
+    return TaskCondition('harvest_all' if target == '*' else 'pick_tomatoes',
+        int(target) if target.isdigit() else None, int(count) if count.isdigit() else None,
+        count != '?', {v:k for k,v in PHASE_CODES.items()}[phase], stop == '1',
+        observation_time, tuple(evidence))

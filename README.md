@@ -111,3 +111,5 @@ P1-0：已完成[物理偏移分解](docs/p1_offset_decomposition.md)、[状态�
 P1-1（2026-11-06）：[数值复现已闭合](docs/p1_replay_parity.md)，后续B0/B2共享FP32/highest评价；[q0首步残差与时移诊断](docs/p1_reference_state_analysis.md)保留真实命令—反馈差异；[配对500步训练准备](docs/p1_small_budget_training_plan.md)通过CPU gate，默认入口只做preflight。本轮未训练。状态：`P1 SMALL-BUDGET TRAINING READY`，不代表B2有效或最终论文验证完成。
 
 P2-4（2026-11-12）：复用FLASH已有语言前缀，实现零新增参数的目标/因果进度接口，关闭路径FP32逐元素复现、真实Batch前后向及Head/条件恢复通过。两条成功开发录制仍缺目标数量及逐颗确认事件，不能启动可信目标条件训练；严格256 Token检查拒绝超限输入。见[目标与进度研究报告](docs/p2_4_goal_progress_flash.md)。没有继续扩展分阶Adapter或启动训练。
+
+P2-4A（2026-11-12）：两条开发任务已由用户确认为“摘完整串”，没有指定数量。紧凑条件限定域最长254 Token，真实连续采摘Batch回归通过；逐颗事件及删除缺口仍待人工确认，尚不能训练目标/进度能力。见[因果监督与审核入口](docs/p2_4a_causal_progress_supervision.md)。

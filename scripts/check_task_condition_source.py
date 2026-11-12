@@ -90,7 +90,7 @@ def main(path):
     checks={'disabled_velocity_max_difference':delta(original[2],replay[2]),
             'disabled_physical_max_difference_rad':delta(original[3],replay[3])}
     if any(v>1e-5 for v in checks.values()): raise ValueError('Disabled replay failure')
-    result={'data_scope':'ONE REAL single-pick training window; all new goal/progress metadata SYNTHETIC FUNCTIONAL TEST',
+    result={'data_scope':cfg.get('data_scope', 'ONE REAL single-pick training window; all new goal/progress metadata SYNTHETIC FUNCTIONAL TEST'),
             'new_trainable_parameters':0, 'optimizer_updates':0, 'source_commit':cfg['source_commit'],
             'parameter_sha256':cfg['parameter_sha256'], 'normalization_sha256':cfg['normalization_sha256'],
             'source_manifest_sha256':sha(cfg['source_manifest']), 'script_sha256':sha(__file__),
@@ -99,10 +99,12 @@ def main(path):
             'FP32':True, 'backend':'cpu', 'batch_size':1, 'action_shape':[1,50,58],
             'history_span_seconds':7/30, 'variants':{}}
     last=None
-    for mode in ('language_goal','explicit_goal','goal_progress'):
-        for count in (1,2,3):
-            c=causal_condition(target_count=count, observation_time=0,
-                               reset_at=0, reset_evidence='SYNTHETIC reset for interface smoke', coverage_until=0)
+    for mode in cfg.get('condition_modes', ('language_goal','explicit_goal','goal_progress')):
+        scenarios=cfg.get('condition_scenarios', [dict(label=str(n),target_count=n,observation_time=0,reset_at=0,reset_evidence='SYNTHETIC reset for interface smoke',coverage_until=0) for n in (1,2,3)])
+        for scenario in scenarios:
+            args={k:v for k,v in scenario.items() if k!='label'}
+            count=scenario['label']
+            c=causal_condition(**args)
             ob=condition_observation(obs,[c],mode=mode,encode=data.tokenizer._tokenizer.encode,max_len=mc.max_token_len)
             r=run(ob);last=(ob,r,c)
             result['variants'][f'{mode}_{count}']={'token_count':int(ob.tokenized_prompt_mask.sum()),
@@ -133,7 +135,7 @@ def main(path):
     nnx.update(m.action_out_proj,restored)
     from trc.models.task_condition import TaskCondition
     d=json.loads((out/'condition.json').read_text());d['evidence']=tuple(d['evidence'])
-    again=condition_observation(obs,[TaskCondition(**d)],mode='goal_progress',encode=data.tokenizer._tokenizer.encode,max_len=mc.max_token_len)
+    again=condition_observation(obs,[TaskCondition(**d)],mode=mode,encode=data.tokenizer._tokenizer.encode,max_len=mc.max_token_len)
     np.testing.assert_array_equal(ob.tokenized_prompt,again.tokenized_prompt)
     after=run(again)
     result['checkpoint']={'scope':'native velocity head + condition JSON; unchanged full body bound by SHA',

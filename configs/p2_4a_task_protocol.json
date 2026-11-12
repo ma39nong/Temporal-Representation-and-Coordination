@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "recording_ids": [
+    "b6cda8f38ada48f293f1f43b7fc8373c",
+    "ab41cacd1b154778849b002cfde263dc"
+  ],
+  "goal_confirmation": {
+    "task_goal": "harvest_all",
+    "target_count": null,
+    "review_status": "verified",
+    "verified_by": "human_user",
+    "evidence": {
+      "type": "direct_user_confirmation_in_chat",
+      "date": "2026-11-12",
+      "quote": "没有指定，我们就是摘完一串番茄，先摘左边的，发现右边摘不了，就选择放回去，右手调整一下，转一下方向，然后重新抓取，最后放回空的杆子"
+    },
+    "termination_goal": "return_empty_stem",
+    "termination_timestamp": null
+  },
+  "template_version": "truss-progress-v1",
+  "mode": "compact_v1",
+  "max_tokens": 256,
+  "task_macro": {
+    "fixed_role_prefix": "Right truss left pick basket",
+    "full_meaning": "Right hand picks up/manipulates and holds the truss; left hand picks tomatoes into the LEFT basket. For harvest_all, repeat with repositioning as needed and return empty stem.",
+    "metadata": "target/completed phase+terminate; *=harvest_all, ?=unknown; p/h/r/a=pickup/harvest/return/adjust; 0/1=terminate request",
+    "numeric_domain": "target 1..9 or unknown/all; completed 0..9 or unknown; out-of-domain rejected"
+  },
+  "training_validation_inference": "all must call condition_observation(mode=compact_v1); original NativeDataset alone does NOT add progress",
+  "training_enrollment": "BLOCKED pending confirmed event stream including deleted intervals"
+}
